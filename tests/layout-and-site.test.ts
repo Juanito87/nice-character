@@ -47,10 +47,12 @@ test('builds a static site with rendered pages and downloadable Homebrewery sour
   });
 
   const index = await readFile(join(outDir, 'index.html'), 'utf8');
+  const nojekyll = await readFile(join(outDir, '.nojekyll'), 'utf8');
   const page = await readFile(join(outDir, 'aria-thorn/index.html'), 'utf8');
   const source = await readFile(join(outDir, 'aria-thorn/aria-thorn.brew.md'), 'utf8');
 
   expect(index).toContain('Aria Thorn');
+  expect(nojekyll).toBe('');
   expect(page).toContain('Print Character Book');
   expect(page).toContain('Download Homebrewery Source');
   expect(page).toContain('class="homebrewery-rendered"');

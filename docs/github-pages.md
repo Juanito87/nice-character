@@ -21,6 +21,8 @@ Use the current workflow mode:
 
 The workflow builds the site into `dist/`, uploads `dist/` with `actions/upload-pages-artifact`, and deploys it with `actions/deploy-pages`.
 
+If the Pages settings screen only offers `/root` or `/docs`, the repository is still in `Deploy from a branch` mode. That mode cannot select arbitrary generated folders such as `dist/`. Switch `Source` to `GitHub Actions`; the workflow artifact is the deployment source.
+
 ## Generated Path
 
 For a project site, the default public URL is:
@@ -49,7 +51,7 @@ https://<owner>.github.io/<repository>/<character-slug>/<character-slug>.brew.md
 
 ## About `dist/`
 
-`dist/` is the generated Pages artifact directory. In this repo's current deployment model, `dist/` should stay ignored and should not be committed.
+`dist/` is the generated Pages artifact directory. In this repo's current deployment model, `dist/` must stay ignored and must not be committed.
 
 GitHub Pages receives `dist/` from the workflow artifact, not from the repository tree. This keeps generated HTML out of source control and avoids committing large Homebrewery-rendered files.
 

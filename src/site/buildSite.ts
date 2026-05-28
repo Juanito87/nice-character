@@ -15,6 +15,7 @@ export type BuildSiteOptions = {
 
 export async function buildSite(options: BuildSiteOptions): Promise<void> {
   await mkdir(options.outDir, { recursive: true });
+  await writeFile(join(options.outDir, '.nojekyll'), '');
   await writeFile(join(options.outDir, 'index.html'), renderIndex(options.characters));
 
   for (const character of options.characters) {

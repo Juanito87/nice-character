@@ -71,6 +71,8 @@ Then open `http://localhost:8080`. The sample character page is at `http://local
 
 This repo is configured to publish with GitHub Actions. Enable Pages in `Settings` -> `Pages` and set `Source` to `GitHub Actions`.
 
+If GitHub only offers `/root` or `/docs`, the repository is still using `Deploy from a branch`. `dist/` is not selectable in that mode. The intended site is deployed from the workflow artifact instead.
+
 For GitHub Free personal or organization accounts, the repository must be public for Pages. Private repository Pages require a paid plan that supports private Pages.
 
 The workflow generates the site into `dist/`, uploads it as a Pages artifact, and deploys it. `dist/` is intentionally ignored and should not be committed for the current deployment model.
@@ -129,6 +131,7 @@ Current pinned actions:
 - `actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683` (`v4.2.2`)
 - `actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020` (`v4.4.0`)
 - `docker/setup-docker-action@0234bb73ccb40f0c430b795634f9247e2b5c2d23` (`v5.2.0`)
+- `actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b` (`v5.0.0`)
 - `actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa` (`v3.0.1`)
 - `actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e` (`v4.0.5`)
 
