@@ -118,5 +118,8 @@ Current pinned actions:
 
 - `actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683` (`v4.2.2`)
 - `actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020` (`v4.4.0`)
+- `docker/setup-docker-action@0234bb73ccb40f0c430b795634f9247e2b5c2d23` (`v5.2.0`)
 - `actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa` (`v3.0.1`)
 - `actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e` (`v4.0.5`)
+
+The workflow installs Docker `v29.5.2` explicitly because GitHub-hosted runners can lag behind the renderer requirement in `homebrewery-renderer.json`.

@@ -23,6 +23,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - uses: docker/setup-docker-action@0234bb73ccb40f0c430b795634f9247e2b5c2d23 # v5.2.0
+        with:
+          version: v29.5.2
       - run: npm ci
       - run: npm run homebrewery:image
       - run: npm run check

@@ -13,3 +13,13 @@ test('GitHub Actions workflow pins every action to a full commit SHA', async () 
     expect(line).not.toMatch(/@(v\d+|main|master|latest)(?:\s|$)/i);
   }
 });
+
+test('GitHub Actions installs the pinned Docker version required by Homebrewery rendering', async () => {
+  const workflow = await readFile('.github/workflows/pages.yml', 'utf8');
+  const rendererConfig = JSON.parse(await readFile('homebrewery-renderer.json', 'utf8')) as { dockerMinVersion: string };
+
+  expect(workflow).toContain('docker/setup-docker-action@0234bb73ccb40f0c430b795634f9247e2b5c2d23');
+  expect(workflow).toContain(`# v5.2.0`);
+  expect(workflow).toContain(`version: v${rendererConfig.dockerMinVersion}`);
+  expect(workflow.indexOf('docker/setup-docker-action')).toBeLessThan(workflow.indexOf('npm run homebrewery:image'));
+});
