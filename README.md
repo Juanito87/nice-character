@@ -67,6 +67,16 @@ npm run site:serve
 
 Then open `http://localhost:8080`. The sample character page is at `http://localhost:8080/sample-character/`.
 
+## GitHub Pages
+
+This repo is configured to publish with GitHub Actions. Enable Pages in `Settings` -> `Pages` and set `Source` to `GitHub Actions`.
+
+For GitHub Free personal or organization accounts, the repository must be public for Pages. Private repository Pages require a paid plan that supports private Pages.
+
+The workflow generates the site into `dist/`, uploads it as a Pages artifact, and deploys it. `dist/` is intentionally ignored and should not be committed for the current deployment model.
+
+See `docs/github-pages.md` for the full setup, URL paths, and `dist/` policy.
+
 ## Homebrewery Renderer Pinning
 
 The site build renders generated `.brew.md` through Dockerized Homebrewery instead of the local approximation. The renderer is pinned in `homebrewery-renderer.json`:

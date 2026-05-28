@@ -86,6 +86,10 @@ Codespaces will detect the forwarded port. Open the forwarded `8080` URL from th
 
 The Pages workflow installs Docker `v29.5.2` with a SHA-pinned `docker/setup-docker-action` step before building the Homebrewery image. This is required because GitHub-hosted runners may ship an older Docker version than the minimum in `homebrewery-renderer.json`.
 
+## Pages Deployment
+
+GitHub Pages deployment is documented in `docs/github-pages.md`. The important local-development detail is that `dist/` is generated output: build it locally to preview, but do not commit it while the repo uses GitHub Actions artifact deployment.
+
 ## Host Development Without Devcontainer
 
 Prerequisites:
