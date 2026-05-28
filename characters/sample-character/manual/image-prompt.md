@@ -1,0 +1,1 @@
+Full-body fantasy portrait of Aria Thorn, a human Battle Master fighter in practical chain mail with a battered shield and longsword, carrying a folded crimson banner. Grounded tabletop RPG style, clear silhouette, confident stance, neutral background.

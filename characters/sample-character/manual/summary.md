@@ -1,0 +1,1 @@
+Aria Thorn is a disciplined human Battle Master who carries the memory of a lost banner from her old company. Her level 1-20 book focuses on tactical growth, superiority dice, and the decisions a player needs at each level.

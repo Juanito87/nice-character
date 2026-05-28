@@ -1,0 +1,31 @@
+{
+  "name": "nice-character",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "nice-character": "./build/src/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "sample:docx": "node scripts/create-sample-docx.mjs",
+    "homebrewery:image": "node scripts/build-homebrewery-image.mjs",
+    "homebrewery:render": "npm run build && node build/src/cli/index.js render-homebrewery",
+    "site:build": "npm run build && node build/src/cli/index.js build-site --input characters --out dist",
+    "site:serve": "python3 -m http.server 8080 --directory dist",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "check": "npm run typecheck && npm test && npm run build"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "mammoth": "^1.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "archiver": "^7.0.1",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "dockerMinVersion": "29.5.2",
+  "homebreweryRepo": "https://github.com/naturalcrit/homebrewery.git",
+  "homebreweryCommit": "077b88139a1df263307b180e1876a1ee454b5dad",
+  "imageName": "nice-character/homebrewery-render:077b88139a1df263307b180e1876a1ee454b5dad",
+  "renderer": "v3",
+  "renderCommand": ["node", "scripts/nice-character-render.mjs"]
+}

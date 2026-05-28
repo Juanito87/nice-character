@@ -1,0 +1,1 @@
+Tabletop miniature STL brief: human duelist in chain mail with shield raised and longsword ready, folded banner tied across the back, heroic 28mm scale, readable silhouette, sturdy contact points, no fragile thin cloth extensions.
