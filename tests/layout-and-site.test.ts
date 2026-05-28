@@ -33,10 +33,24 @@ test('discovers character folders with character-local manual files and global a
 
 test('builds a static site with rendered pages and downloadable Homebrewery source', async () => {
   const outDir = await mkdtemp(join(tmpdir(), 'nice-character-site-'));
+  const assetsDir = join(outDir, 'homebrewery-assets-source');
+  const fontsDir = join(outDir, 'homebrewery-fonts-source');
+  await mkdir(assetsDir, { recursive: true });
+  await mkdir(join(fontsDir, '5e'), { recursive: true });
+  await writeFile(join(assetsDir, 'parchmentBackground.jpg'), 'image');
+  await writeFile(join(fontsDir, '5e/BookInsanity.woff2'), 'font');
 
   await buildSite({
     outDir,
-    renderHomebreweryHtml: async ({ markdown }) => `<div class="homebrewery-rendered">${markdown}</div>`,
+    homebreweryAssetsDir: assetsDir,
+    homebreweryFontsDir: fontsDir,
+    renderHomebreweryHtml: async ({ markdown }) => `
+      <style>
+        @font-face{font-family:BookInsanity;src:url('../../../fonts/5e/BookInsanity.woff2')}
+        .page{background-image:url('/assets/parchmentBackground.jpg')}
+      </style>
+      <div class="brewRenderer rendererV3"><div class="pages"><div class="page">${markdown}</div></div></div>
+    `,
     characters: [
       {
         slug: 'aria-thorn',
@@ -50,15 +64,22 @@ test('builds a static site with rendered pages and downloadable Homebrewery sour
   const nojekyll = await readFile(join(outDir, '.nojekyll'), 'utf8');
   const page = await readFile(join(outDir, 'aria-thorn/index.html'), 'utf8');
   const source = await readFile(join(outDir, 'aria-thorn/aria-thorn.brew.md'), 'utf8');
+  const copiedAsset = await readFile(join(outDir, 'assets/parchmentBackground.jpg'), 'utf8');
+  const copiedFont = await readFile(join(outDir, 'fonts/5e/BookInsanity.woff2'), 'utf8');
 
   expect(index).toContain('Aria Thorn');
   expect(nojekyll).toBe('');
   expect(page).toContain('Print Character Book');
   expect(page).toContain('Download Homebrewery Source');
-  expect(page).toContain('class="homebrewery-rendered"');
+  expect(page).toContain('class="brewRenderer rendererV3"');
+  expect(page).toContain('class="pages"');
+  expect(page).toContain("url('../assets/parchmentBackground.jpg')");
+  expect(page).toContain("url('../fonts/5e/BookInsanity.woff2')");
   expect(page).toContain('\\column');
   expect(page).not.toContain('class="column-break"');
   expect(source).toContain('{{classTable,frame');
+  expect(copiedAsset).toBe('image');
+  expect(copiedFont).toBe('font');
 });
 
 test('resolves manual asset inputs relative to the character folder', async () => {

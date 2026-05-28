@@ -11,7 +11,9 @@ const renderedPages = pages
 
 await writeFile(options.output, `<style>${css}</style>
 <div class="brewRenderer rendererV3">
-  ${renderedPages}
+  <div class="pages">
+    ${renderedPages}
+  </div>
 </div>
 `);
 
@@ -29,15 +31,16 @@ function parseArgs(args) {
 
 async function readOptionalCss() {
   const candidates = [
-    'build/themes/V3/5ePHB/style.css',
-    'build/themes/V3/Blank/style.css'
+    'build/themes/V3/Blank/style.css',
+    'build/themes/V3/5ePHB/style.css'
   ];
+  const css = [];
   for (const candidate of candidates) {
     try {
-      return await readFile(candidate, 'utf8');
+      css.push(await readFile(candidate, 'utf8'));
     } catch {
       // Try next generated theme asset.
     }
   }
-  return '';
+  return css.join('\n');
 }

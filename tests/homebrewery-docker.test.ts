@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
   assertPinnedRendererConfig,
@@ -62,4 +63,12 @@ test('parses and compares Docker versions', () => {
   expect(compareVersions('29.5.2', '29.5.2')).toBe(0);
   expect(compareVersions('30.0.0', '29.5.2')).toBeGreaterThan(0);
   expect(compareVersions('29.4.0', '29.5.2')).toBeLessThan(0);
+});
+
+test('renderer script includes Homebrewery base and 5ePHB presentation layers', async () => {
+  const script = await readFile('scripts/homebrewery-render-file.mjs', 'utf8');
+
+  expect(script).toContain('build/themes/V3/Blank/style.css');
+  expect(script).toContain('build/themes/V3/5ePHB/style.css');
+  expect(script).toContain('<div class="pages">');
 });

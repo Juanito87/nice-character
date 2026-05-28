@@ -55,6 +55,8 @@ program
     }
     await buildSite({
       outDir: options.out,
+      homebreweryAssetsDir: join('.homebrewery-src', rendererConfig.homebreweryCommit, 'themes/assets'),
+      homebreweryFontsDir: join('.homebrewery-src', rendererConfig.homebreweryCommit, 'themes/fonts'),
       characters: rendered,
       renderHomebreweryHtml: async (character) => {
         const characterOut = join(options.out, character.slug);
