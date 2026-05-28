@@ -1,5 +1,6 @@
 # Nice Character
 
+This project is born because I wanted to automate a proces I've been doing with ai for character creation, and I wanted to have better versioning than keeping things on google drive. Also for testing <https://github.com/Xipher-Labs/walter-os> to improve on ai-workflows.
 Nice Character converts structured D&D player-character `.docx` books into Homebrewery v3-style markdown and a print-friendly static site for GitHub Pages.
 
 ## Character Layout
@@ -95,7 +96,7 @@ This repo includes `.devcontainer/devcontainer.json` for local development in VS
 
 The container uses Node 24 and Docker-outside-of-Docker, mounting the host Docker socket so the pinned Homebrewery image workflow works the same way inside and outside the container.
 
-After opening the repo in the devcontainer:
+Local devcontainer quickstart:
 
 ```bash
 npm run homebrewery:image
@@ -103,7 +104,11 @@ npm run check
 npm run site:build
 ```
 
+GitHub Codespaces uses the same devcontainer. After the codespace starts, run the same commands and open the forwarded `8080` port after `npm run site:serve`.
+
 Docker access inside the container is intentionally broad because the project needs to build and run the pinned Homebrewery renderer image. Treat the devcontainer as trusted local development infrastructure.
+
+See `docs/development.md` for local devcontainer, Codespaces, host development, and troubleshooting steps.
 
 ## CI Pinning
 
