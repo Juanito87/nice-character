@@ -35,7 +35,7 @@ test('renders Homebrewery v3 markdown for the full character book', async () => 
 
   expect(markdown).toContain('# Aria Thorn');
   expect(markdown).not.toMatch(/Level:/);
-  expect(markdown).toContain('{{classTable,frame');
+  expect(markdown).toContain('{{classTable,frame,wide');
   expect(markdown).toContain('| 20 | +6 | Extra Attack (3) |');
   expect(markdown).toContain('## Full Feature Reference');
   expect(markdown).toContain('### Action Surge');

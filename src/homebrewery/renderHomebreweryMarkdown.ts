@@ -25,7 +25,7 @@ export function renderHomebreweryMarkdown(book: CharacterBook): string {
     '',
     '## Level Progression',
     '',
-    '{{classTable,frame',
+    '{{classTable,frame,wide',
     '| Level | Prof. | Features | Subclass | Resources | Decisions | Notes |',
     '| :-- | :-- | :-- | :-- | :-- | :-- | :-- |',
     ...book.progression.map((entry) => (
