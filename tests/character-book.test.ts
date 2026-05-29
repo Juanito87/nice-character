@@ -372,6 +372,38 @@ test('uses a higher budget for titled feature reference pages', () => {
   expect((markdown.match(/{{footnote Feature Reference}}/g) ?? [])).toHaveLength(1);
 });
 
+test('balances feature reference columns before adding a page break', () => {
+  const progressionRows = Array.from({ length: 20 }, (_, index) => (
+    `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`
+  )).join('');
+  const longFeatureText = Array.from({ length: 100 }, () => 'Feature text.').join(' ');
+
+  const book = parseCharacterHtml(`
+    <p>Character overview</p>
+    <table><tr><td>Name</td><td>Escama Roja</td></tr></table>
+    <p>Level Progression</p>
+    <table><tr><td>Level</td><td>Proficiency Bonus</td><td>Features Gained</td><td>Subclass Features</td><td>Resources</td><td>Decisions</td><td>Notes</td></tr>${progressionRows}</table>
+    <p>Full Feature Reference</p>
+    ${Array.from({ length: 20 }, (_, index) => (
+      `<h2>Feature ${index + 1}</h2><p>${index < 3 ? longFeatureText : `Description ${index + 1}`}</p>`
+    )).join('')}
+    <p>Spell &amp; Resources</p>
+    <p>No spells.</p>
+    <p>Equipment &amp; Inventory</p>
+    <p>Rope.</p>
+    <p>Character Story</p>
+    <p>A pirate.</p>
+  `);
+  const markdown = renderHomebreweryMarkdown(book);
+  const firstFeaturePage = markdown
+    .split('{{footnote Feature Reference}}')[0]
+    .split('## Full Feature Reference')[1] ?? '';
+
+  expect(firstFeaturePage).toContain('\\column');
+  expect(firstFeaturePage.indexOf('### Feature 1')).toBeLessThan(firstFeaturePage.indexOf('\\column'));
+  expect(firstFeaturePage.indexOf('\\column')).toBeLessThan(firstFeaturePage.indexOf('### Feature 2'));
+});
+
 test('omits empty generated content sections', () => {
   const progressionRows = Array.from({ length: 20 }, (_, index) => (
     `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`

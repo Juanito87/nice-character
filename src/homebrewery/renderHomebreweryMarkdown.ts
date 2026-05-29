@@ -2,7 +2,7 @@ import type { CharacterBook, ContentBlock, FeatureReference, ProgressionLevel } 
 
 const textOnlyPageBudget = 2400;
 const mixedProsePageBudget = 2800;
-const featurePageBudget = 2800;
+const featurePageBudget = 3200;
 
 type Page = {
     firstPageTitle: string;
@@ -79,7 +79,8 @@ function renderFeatureReference(features: FeatureReference[]): string[] {
       page,
       pages,
       block: rendered,
-      forceBreakWhenFull: true
+      forceBreakWhenFull: true,
+      minimumBlocksBeforeBreak: 2
     });
   }
 
@@ -176,10 +177,15 @@ function addBlockToPages(options: {
   pages: Page[];
   block: string;
   forceBreakWhenFull: boolean;
+  minimumBlocksBeforeBreak?: number;
 }): Page {
   const blockCost = estimateCost(options.block);
+  const minimumBlocksBeforeBreak = options.minimumBlocksBeforeBreak ?? 1;
+  const hasEnoughBlocksToBreak = options.page.blocks.length >= minimumBlocksBeforeBreak
+    || isOversizedSingleBlock(options.page);
   const shouldBreak = options.forceBreakWhenFull
     && options.page.blocks.length > 0
+    && hasEnoughBlocksToBreak
     && options.page.cost + blockCost > options.page.budget;
 
   if (shouldBreak) {
@@ -195,6 +201,10 @@ function addBlockToPages(options: {
   return options.page;
 }
 
+function isOversizedSingleBlock(page: Page): boolean {
+  return page.blocks.length === 1 && estimateCost(page.blocks[0] ?? '') > page.budget;
+}
+
 function renderPages(pages: Page[], footnote: string, useColumns = false, includeBreakAfter = true): string[] {
   return pages.flatMap((page, index) => [
     ...(index === 0 && page.firstPageTitle ? [page.firstPageTitle, ''] : []),
@@ -204,10 +214,32 @@ function renderPages(pages: Page[], footnote: string, useColumns = false, includ
 }
 
 function joinRenderedBlocks(blocks: string[], useColumns: boolean): string[] {
-  const columnAfterIndex = useColumns && blocks.length > 3 ? Math.ceil(blocks.length / 2) - 1 : -1;
+  const columnAfterIndex = useColumns ? balancedColumnAfterIndex(blocks) : -1;
   return blocks.flatMap((block, index) => (
     index === columnAfterIndex ? [block, '', '\\column', ''] : [block, '']
   ));
+}
+
+function balancedColumnAfterIndex(blocks: string[]): number {
+  if (blocks.length < 2) {
+    return -1;
+  }
+
+  const totalCost = blocks.reduce((sum, block) => sum + estimateCost(block), 0);
+  let bestIndex = 0;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  let firstColumnCost = 0;
+
+  for (let index = 0; index < blocks.length - 1; index += 1) {
+    firstColumnCost += estimateCost(blocks[index] ?? '');
+    const distance = Math.abs((totalCost / 2) - firstColumnCost);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestIndex = index;
+    }
+  }
+
+  return bestIndex;
 }
 
 function renderWideTable(rows: string[][]): string {
