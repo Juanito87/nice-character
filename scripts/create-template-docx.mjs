@@ -121,6 +121,13 @@ function documentXml() {
     p('[Origin or early-life subtitle]'),
     p('[Origin paragraph.]'),
     p('[Reputation, allies, enemies, hooks, secrets, current status, and campaign-facing prompts.]'),
+    p('AI Assets'),
+    table([
+      ['Field', 'Value'],
+      ['run_ai', 'false'],
+      ['provider', 'mock'],
+      ['force', 'false']
+    ]),
     p('Sources'),
     p('[Source name] [Link](https://example.com) - [What this source was used for.]'),
     table([

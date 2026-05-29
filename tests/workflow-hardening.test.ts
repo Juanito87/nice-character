@@ -23,3 +23,17 @@ test('GitHub Actions installs the pinned Docker version required by Homebrewery 
   expect(workflow).toContain(`version: v${rendererConfig.dockerMinVersion}`);
   expect(workflow.indexOf('docker/setup-docker-action')).toBeLessThan(workflow.indexOf('npm run homebrewery:image'));
 });
+
+test('GitHub Actions makes Pages deployment and AI generation optional', async () => {
+  const workflow = await readFile('.github/workflows/pages.yml', 'utf8');
+
+  expect(workflow).toContain('publish_pages');
+  expect(workflow).toContain("vars.PUBLISH_PAGES == 'true'");
+  expect(workflow).toContain('run_ai');
+  expect(workflow).toContain("inputs.run_ai == 'true'");
+  expect(workflow).toContain('ai_provider');
+  expect(workflow).toContain('force_ai');
+  expect(workflow).toContain('prepare-ai');
+  expect(workflow).toContain('OPENAI_API_KEY');
+  expect(workflow).toContain('GEMINI_API_KEY');
+});

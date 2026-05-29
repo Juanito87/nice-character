@@ -13,6 +13,7 @@ test('template docx follows the Escama Roja reusable structure', async () => {
   expect(html).toContain('Character description');
   expect(html).toContain('LV 1 stats');
   expect(html).toContain('Flavor items');
+  expect(html).toContain('AI Assets');
   expect(html).toContain('Sources');
   expect(book.overviewRows.map((row) => row[0])).toEqual([
     'Name',
@@ -42,6 +43,7 @@ test('template docx follows the Escama Roja reusable structure', async () => {
     ])
   );
   expect(book.sectionBlocks.sources.length).toBeGreaterThan(0);
+  expect(book.aiAssets).toEqual({ runAi: false, provider: 'mock', force: false });
   expect(markdown).toContain('<h3>Character Description</h3>');
   expect(markdown).toContain('## LV 1 Stats');
   expect(markdown).toContain('### Flavor items');

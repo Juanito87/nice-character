@@ -33,6 +33,14 @@ export type AssetInputs = {
   stlPrompt?: string;
 };
 
+export type AiAssetProviderName = 'mock' | 'openai' | 'gemini';
+
+export type AiAssets = {
+  runAi?: boolean;
+  provider?: AiAssetProviderName;
+  force?: boolean;
+};
+
 export type ContentBlock =
   | {
       type: 'paragraph';
@@ -66,4 +74,5 @@ export type CharacterBook = {
     sources: ContentBlock[];
   };
   assetInputs: AssetInputs;
+  aiAssets?: AiAssets;
 };

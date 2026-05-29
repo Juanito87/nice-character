@@ -141,6 +141,31 @@ Optional. Use a two-column table:
 
 Values can be pasted text or paths relative to the character folder.
 
+## AI Assets
+
+Optional. Use a two-column table to control generated sidecars:
+
+| Field | Value |
+| --- | --- |
+| run_ai | false |
+| provider | mock |
+| force | false |
+
+`run_ai` opts this DOCX into AI generation when the CLI or workflow AI phase is enabled. `provider` can be `mock`, `openai`, or `gemini`. `force` overwrites existing generated sidecars for this character.
+
+## AI Sidecars
+
+AI-generated drafts live outside the DOCX under `characters/<name>/generated/`:
+
+```text
+generated/description.md
+generated/image-prompt.md
+generated/illustration.png
+generated/assets.json
+```
+
+Run `nice-character prepare-ai <character-folder-or-docx>` to create deterministic sidecars with the mock provider. Use `--provider openai` with `OPENAI_API_KEY` or `--provider gemini` with `GEMINI_API_KEY` for real providers. Manual DOCX description and illustration fields take precedence over generated sidecars.
+
 ## Generated Homebrewery Layout
 
 The converter adds Homebrewery v3 layout controls to the generated `.brew.md`:

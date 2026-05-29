@@ -32,7 +32,8 @@ These top-level headings are optional:
 
 1. How To Use This Book
 2. Asset Inputs
-3. Sources
+3. AI Assets
+4. Sources
 
 The overview must not include a current level. The book is a level 1-20 reference.
 Optional `Character Description`/`Description` and `Illustration`/`Image`/`Portrait` overview fields render as a description block beside a large character illustration.
@@ -62,9 +63,33 @@ After build:
 ```bash
 node build/src/cli/index.js validate characters/sample-character
 node build/src/cli/index.js validate "characters/Escama Roja/EscamaRoja.docx"
+node build/src/cli/index.js prepare-ai "characters/Escama Roja"
 node build/src/cli/index.js convert characters/sample-character --out dist/sample-character
 node build/src/cli/index.js build-site --input characters --out dist
 ```
+
+## AI Sidecars
+
+`prepare-ai` creates generated drafts under `characters/<name>/generated/` without changing the source DOCX:
+
+```text
+generated/description.md
+generated/image-prompt.md
+generated/illustration.png
+generated/assets.json
+```
+
+Manual DOCX description and illustration fields take precedence. If an illustration is missing from the DOCX and `generated/illustration.png` exists, the generated image path is used in the rendered character overview.
+
+Use an optional DOCX `AI Assets` section to opt individual characters into generation:
+
+| Field | Value |
+| --- | --- |
+| run_ai | true |
+| provider | mock |
+| force | false |
+
+Providers are selected with `--provider mock`, `--provider openai`, or `--provider gemini`. OpenAI requires `OPENAI_API_KEY`; Gemini requires `GEMINI_API_KEY`. Running `prepare-ai characters` processes only DOCX files with `run_ai` set to `true` unless `--run-ai` is passed as a manual override.
 
 For local preview:
 
@@ -84,7 +109,7 @@ If GitHub only offers `/root` or `/docs`, the repository is still using `Deploy 
 
 For GitHub Free personal or organization accounts, the repository must be public for Pages. Private repository Pages require a paid plan that supports private Pages.
 
-The workflow generates the site into `dist/`, uploads it as a Pages artifact, and deploys it. `dist/` is intentionally ignored and should not be committed for the current deployment model.
+The workflow always builds and verifies the site into `dist/`. Upload and deploy are optional: run the workflow with `publish_pages=true` or set the repository variable `PUBLISH_PAGES=true`. `dist/` is intentionally ignored and should not be committed for the current deployment model.
 
 See `docs/github-pages.md` for the full setup, URL paths, and `dist/` policy.
 

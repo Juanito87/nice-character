@@ -1,10 +1,11 @@
-import { cp, mkdir, writeFile } from 'node:fs/promises';
+import { access, cp, mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 export type SiteCharacter = {
   slug: string;
   title: string;
   markdown: string;
+  generatedAssetsDir?: string;
 };
 
 export type BuildSiteOptions = {
@@ -30,9 +31,21 @@ export async function buildSite(options: BuildSiteOptions): Promise<void> {
     const characterOut = join(options.outDir, character.slug);
     const renderedHtml = await options.renderHomebreweryHtml(character);
     await mkdir(characterOut, { recursive: true });
+    if (character.generatedAssetsDir && await exists(join(character.generatedAssetsDir, 'generated'))) {
+      await cp(join(character.generatedAssetsDir, 'generated'), join(characterOut, 'generated'), { recursive: true, force: true });
+    }
     await writeFile(join(characterOut, 'index.html'), renderCharacterPage(character, rewriteHomebreweryAssetUrls(renderedHtml)));
     await writeFile(join(characterOut, `${character.slug}.brew.md`), character.markdown);
     await writeFile(join(characterOut, 'assets.json'), JSON.stringify({ slug: character.slug, assets: [] }, null, 2));
+  }
+}
+
+async function exists(path: string): Promise<boolean> {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
   }
 }
 
