@@ -1,4 +1,4 @@
-import type { AssetInputs, CharacterBook, FeatureReference, ProgressionLevel } from '../model/CharacterBook.js';
+import type { AssetInputs, CharacterBook, ContentBlock, FeatureReference, ProgressionLevel } from '../model/CharacterBook.js';
 
 const requiredSections = [
   'Character Overview',
@@ -42,12 +42,19 @@ export function parseCharacterHtml(html: string): CharacterBook {
   }
 
   const overview = parseOverview(sectionMap.get('Character Overview') ?? '');
+  const overviewRows = parseFirstTableRows(sectionMap.get('Character Overview') ?? '');
+  const levelOneStatsRows = parseLevelOneStatsRows(sectionMap.get('Character Overview') ?? '');
   const progression = parseProgression(sectionMap.get('Level Progression') ?? '');
   const features = parseFeatures(sectionMap.get('Full Feature Reference') ?? '', progression);
+  const sectionBlocks = {
+    spellsAndResources: parseContentBlocks(sectionMap.get('Spells & Resources') ?? ''),
+    equipmentAndInventory: parseContentBlocks(sectionMap.get('Equipment & Inventory') ?? ''),
+    characterStory: parseContentBlocks(sectionMap.get('Character Story') ?? '')
+  };
   const proseSections = {
-    spellsAndResources: textContent(sectionMap.get('Spells & Resources') ?? ''),
-    equipmentAndInventory: textContent(sectionMap.get('Equipment & Inventory') ?? ''),
-    characterStory: textContent(sectionMap.get('Character Story') ?? '')
+    spellsAndResources: renderBlockText(sectionBlocks.spellsAndResources),
+    equipmentAndInventory: renderBlockText(sectionBlocks.equipmentAndInventory),
+    characterStory: renderBlockText(sectionBlocks.characterStory)
   };
   const assetInputs = parseAssetInputs(sectionMap.get('Asset Inputs') ?? '');
 
@@ -56,10 +63,13 @@ export function parseCharacterHtml(html: string): CharacterBook {
 
   return {
     overview,
+    overviewRows,
+    levelOneStatsRows,
     howToUse: textContent(sectionMap.get('How To Use This Book') ?? '') || defaultHowToUse,
     progression,
     features,
     sections: proseSections,
+    sectionBlocks,
     assetInputs
   };
 }
@@ -114,7 +124,7 @@ function parseOverview(html: string): CharacterBook['overview'] {
 }
 
 function parseProgression(html: string): ProgressionLevel[] {
-  const rows = parseTableRows(html);
+  const rows = parseFirstTableRows(html);
   if (rows.length < 2) {
     throw new Error('Level Progression must include a header row and levels 1-20');
   }
@@ -192,7 +202,7 @@ function parseAssetInputs(html: string): AssetInputs {
 
 function parseKeyValueTable(html: string): Map<string, string> {
   const fields = new Map<string, string>();
-  for (const row of parseTableRows(html)) {
+  for (const row of parseFirstTableRows(html)) {
     const key = normalizeKey(row[0] ?? '');
     const value = row[1] ?? '';
     if (key) {
@@ -202,12 +212,93 @@ function parseKeyValueTable(html: string): Map<string, string> {
   return fields;
 }
 
+function parseLevelOneStatsRows(html: string): string[][] | undefined {
+  const marker = html.search(/<p[^>]*>\s*(?:lv|level)\s*(?:1|one)\s*stats\s*<\/p>/i);
+  if (marker === -1) {
+    return undefined;
+  }
+  const afterMarker = html.slice(marker);
+  const table = afterMarker.match(/<table[^>]*>.*?<\/table>/is)?.[0];
+  return table ? parseTableRows(table) : undefined;
+}
+
+function parseFirstTableRows(html: string): string[][] {
+  const table = html.match(/<table[^>]*>.*?<\/table>/is)?.[0] ?? '';
+  return parseTableRows(table);
+}
+
 function parseTableRows(html: string): string[][] {
   const rowPattern = /<tr[^>]*>(.*?)<\/tr>/gis;
   return [...html.matchAll(rowPattern)].map((rowMatch) => {
     const cellPattern = /<t[dh][^>]*>(.*?)<\/t[dh]>/gis;
     return [...(rowMatch[1] ?? '').matchAll(cellPattern)].map((cellMatch) => textContent(cellMatch[1] ?? ''));
   });
+}
+
+function parseContentBlocks(html: string): ContentBlock[] {
+  const blocks: ContentBlock[] = [];
+  const blockPattern = /<table[^>]*>.*?<\/table>|<p[^>]*>.*?<\/p>/gis;
+  for (const match of html.matchAll(blockPattern)) {
+    const value = match[0] ?? '';
+    if (value.toLowerCase().startsWith('<table')) {
+      const rows = parseTableRows(value);
+      if (rows.length > 0) {
+        blocks.push({ type: 'table', rows });
+      }
+    } else {
+      const text = textContentWithStructure(value);
+      if (text) {
+        blocks.push({ type: 'paragraph', text });
+      }
+    }
+  }
+  return coalesceTabbedTables(blocks);
+}
+
+function renderBlockText(blocks: ContentBlock[]): string {
+  return blocks.map((block) => (
+    block.type === 'paragraph'
+      ? block.text
+      : block.rows.map((row) => row.join('\t')).join('\n')
+  )).join('\n\n');
+}
+
+function coalesceTabbedTables(blocks: ContentBlock[]): ContentBlock[] {
+  const normalized: ContentBlock[] = [];
+  for (let index = 0; index < blocks.length; index += 1) {
+    const block = blocks[index];
+    if (!block || block.type !== 'paragraph' || !isTabbedRow(block.text)) {
+      if (block) normalized.push(block);
+      continue;
+    }
+
+    const rows: string[][] = [];
+    let cursor = index;
+    while (cursor < blocks.length) {
+      const candidate = blocks[cursor];
+      if (!candidate || candidate.type !== 'paragraph' || !isTabbedRow(candidate.text)) {
+        break;
+      }
+      rows.push(splitTabbedRow(candidate.text));
+      cursor += 1;
+    }
+
+    if (rows.length > 1 && rows.every((row) => row.length === rows[0]?.length)) {
+      normalized.push({ type: 'table', rows });
+      index = cursor - 1;
+    } else {
+      normalized.push(block);
+    }
+  }
+  return normalized;
+}
+
+function isTabbedRow(value: string): boolean {
+  return !value.includes('\n') && splitTabbedRow(value).length > 1;
+}
+
+function splitTabbedRow(value: string): string[] {
+  return value.split('\t').map((cell) => cleanText(cell)).filter(Boolean);
 }
 
 function validateLevels(progression: ProgressionLevel[]): void {
@@ -264,7 +355,22 @@ function textContent(html: string): string {
   return cleanText(html.replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n'));
 }
 
+function textContentWithStructure(html: string): string {
+  return decodeText(html.replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n'))
+    .split('\n')
+    .map((line) => line.replace(/ {2,}/g, ' ').trim())
+    .filter(Boolean)
+    .join('\n')
+    .trim();
+}
+
 function cleanText(value: string): string {
+  return decodeText(value)
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function decodeText(value: string): string {
   return value
     .replace(/<[^>]+>/g, '')
     .replace(/&nbsp;/g, ' ')
@@ -272,7 +378,5 @@ function cleanText(value: string): string {
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&#39;/g, "'")
-    .replace(/&quot;/g, '"')
-    .replace(/\s+/g, ' ')
-    .trim();
+    .replace(/&quot;/g, '"');
 }

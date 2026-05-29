@@ -31,11 +31,28 @@ export type AssetInputs = {
   stlPrompt?: string;
 };
 
+export type ContentBlock =
+  | {
+      type: 'paragraph';
+      text: string;
+    }
+  | {
+      type: 'table';
+      rows: string[][];
+    };
+
 export type CharacterBook = {
   overview: CharacterOverview;
+  overviewRows: string[][];
+  levelOneStatsRows?: string[][];
   howToUse: string;
   progression: ProgressionLevel[];
   features: FeatureReference[];
   sections: Record<string, string>;
+  sectionBlocks: {
+    spellsAndResources: ContentBlock[];
+    equipmentAndInventory: ContentBlock[];
+    characterStory: ContentBlock[];
+  };
   assetInputs: AssetInputs;
 };
