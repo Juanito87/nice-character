@@ -83,6 +83,80 @@ test('renders character overview and level one stats as wide framed tables', () 
   expect(markdown).not.toContain('## How To Use This Book');
 });
 
+test('parses overview description and illustration without showing illustration as a fact row', () => {
+  const progressionRows = Array.from({ length: 20 }, (_, index) => (
+    `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`
+  )).join('');
+  const featureDescriptions = Array.from({ length: 20 }, (_, index) => (
+    `<h2>Feature ${index + 1}</h2><p>Description ${index + 1}</p>`
+  )).join('');
+
+  const book = parseCharacterHtml(`
+    <p>Character overview</p>
+    <table>
+      <tr><td>Name</td><td>Escama Roja</td></tr>
+      <tr><td>Description</td><td>A scarlet-scaled corsair with a jagged grin and a weathered admiral coat.</td></tr>
+      <tr><td>Illustration</td><td>assets/escama-roja.png</td></tr>
+    </table>
+    <p>Level Progression</p>
+    <table><tr><td>Level</td><td>Proficiency Bonus</td><td>Features Gained</td><td>Subclass Features</td><td>Resources</td><td>Decisions</td><td>Notes</td></tr>${progressionRows}</table>
+    <p>Full Feature Reference</p>
+    ${featureDescriptions}
+    <p>Spell &amp; Resources</p>
+    <p>No spells.</p>
+    <p>Equipment &amp; Inventory</p>
+    <p>Rope.</p>
+    <p>Character Story</p>
+    <p>A pirate.</p>
+  `);
+
+  expect(book.overview.description).toBe('A scarlet-scaled corsair with a jagged grin and a weathered admiral coat.');
+  expect(book.overview.illustration).toBe('assets/escama-roja.png');
+  expect(book.overviewRows).toContainEqual(['Name', 'Escama Roja']);
+  expect(book.overviewRows).not.toContainEqual(['Description', 'A scarlet-scaled corsair with a jagged grin and a weathered admiral coat.']);
+  expect(book.overviewRows).not.toContainEqual(['Illustration', 'assets/escama-roja.png']);
+});
+
+test('renders overview description beside a larger optional illustration', () => {
+  const progressionRows = Array.from({ length: 20 }, (_, index) => (
+    `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`
+  )).join('');
+  const featureDescriptions = Array.from({ length: 20 }, (_, index) => (
+    `<h2>Feature ${index + 1}</h2><p>Description ${index + 1}</p>`
+  )).join('');
+
+  const book = parseCharacterHtml(`
+    <p>Character overview</p>
+    <table>
+      <tr><td>Name</td><td>Escama Roja</td></tr>
+      <tr><td>Character Description</td><td>A scarlet-scaled corsair with a jagged grin.</td></tr>
+      <tr><td>Image</td><td>assets/escama-roja.png</td></tr>
+    </table>
+    <p>Level Progression</p>
+    <table><tr><td>Level</td><td>Proficiency Bonus</td><td>Features Gained</td><td>Subclass Features</td><td>Resources</td><td>Decisions</td><td>Notes</td></tr>${progressionRows}</table>
+    <p>Full Feature Reference</p>
+    ${featureDescriptions}
+    <p>Spell &amp; Resources</p>
+    <p>No spells.</p>
+    <p>Equipment &amp; Inventory</p>
+    <p>Rope.</p>
+    <p>Character Story</p>
+    <p>A pirate.</p>
+  `);
+  const markdown = renderHomebreweryMarkdown(book);
+
+  expect(markdown).toContain('class="character-overview-media"');
+  expect(markdown).toContain('grid-template-columns:minmax(0,0.85fr) minmax(260px,1.5fr)');
+  expect(markdown).toContain('<div class="character-overview-description">');
+  expect(markdown).toContain('<h3>Character Description</h3>');
+  expect(markdown).toContain('A scarlet-scaled corsair with a jagged grin.');
+  expect(markdown).toContain('<div class="character-overview-illustration">');
+  expect(markdown).toContain('style="width:100%;max-height:420px;object-fit:contain;"');
+  expect(markdown).toContain('<img src="assets/escama-roja.png" alt="Escama Roja illustration"');
+  expect(markdown).not.toContain('| Character Description | A scarlet-scaled corsair with a jagged grin. |');
+  expect(markdown).not.toContain('| Image | assets/escama-roja.png |');
+});
+
 test('preserves equipment paragraphs and tables in generated markdown', () => {
   const progressionRows = Array.from({ length: 20 }, (_, index) => (
     `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`

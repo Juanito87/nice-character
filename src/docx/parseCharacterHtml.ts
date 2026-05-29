@@ -31,6 +31,7 @@ const equipmentSubtitles = new Set([
   'starting gear',
   'wanted items',
   'utility items',
+  'flavor items',
   'flavors items'
 ]);
 
@@ -50,7 +51,7 @@ export function parseCharacterHtml(html: string): CharacterBook {
   }
 
   const overview = parseOverview(sectionMap.get('Character Overview') ?? '');
-  const overviewRows = parseFirstTableRows(sectionMap.get('Character Overview') ?? '');
+  const overviewRows = parseOverviewRows(sectionMap.get('Character Overview') ?? '');
   const levelOneStatsRows = parseLevelOneStatsRows(sectionMap.get('Character Overview') ?? '');
   const progression = parseProgression(sectionMap.get('Level Progression') ?? '');
   const features = parseFeatures(sectionMap.get('Full Feature Reference') ?? '', progression);
@@ -129,8 +130,55 @@ function parseOverview(html: string): CharacterBook['overview'] {
     background: fields.get('background'),
     player: fields.get('player'),
     campaign: fields.get('campaign'),
-    tagline: fields.get('tagline')
+    tagline: fields.get('tagline'),
+    description: fields.get('description') ?? fields.get('character description') ?? parseOverviewDescription(html),
+    illustration: fields.get('illustration') ?? fields.get('image') ?? fields.get('portrait')
   };
+}
+
+function parseOverviewDescription(html: string): string | undefined {
+  const blocks = [...html.matchAll(/<table[^>]*>.*?<\/table>|<p[^>]*>.*?<\/p>/gis)].map((match) => ({
+    html: match[0] ?? '',
+    isTable: (match[0] ?? '').toLowerCase().startsWith('<table')
+  }));
+  const paragraphs: string[] = [];
+  let isCollecting = false;
+
+  for (const block of blocks) {
+    if (block.isTable) {
+      if (isCollecting) break;
+      continue;
+    }
+
+    const text = textContent(block.html);
+    const key = normalizeKey(text);
+    if (key === 'character description' || key === 'description') {
+      isCollecting = true;
+      continue;
+    }
+    if (isCollecting && isLevelOneStatsLabel(text)) {
+      break;
+    }
+    if (isCollecting && text) {
+      paragraphs.push(text);
+    }
+  }
+
+  return paragraphs.length > 0 ? paragraphs.join('\n\n') : undefined;
+}
+
+function parseOverviewRows(html: string): string[][] {
+  return parseFirstTableRows(html).filter((row) => !isOverviewDisplayMetadataKey(row[0] ?? ''));
+}
+
+function isOverviewDisplayMetadataKey(value: string): boolean {
+  return [
+    'description',
+    'character description',
+    'illustration',
+    'image',
+    'portrait'
+  ].includes(normalizeKey(value));
 }
 
 function parseProgression(html: string): ProgressionLevel[] {
@@ -230,6 +278,10 @@ function parseLevelOneStatsRows(html: string): string[][] | undefined {
   const afterMarker = html.slice(marker);
   const table = afterMarker.match(/<table[^>]*>.*?<\/table>/is)?.[0];
   return table ? parseTableRows(table) : undefined;
+}
+
+function isLevelOneStatsLabel(value: string): boolean {
+  return /^(?:lv|level)\s*(?:1|one)\s*stats$/i.test(value);
 }
 
 function parseFirstTableRows(html: string): string[][] {

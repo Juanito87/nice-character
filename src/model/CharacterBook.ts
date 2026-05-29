@@ -7,6 +7,8 @@ export type CharacterOverview = {
   player?: string;
   campaign?: string;
   tagline?: string;
+  description?: string;
+  illustration?: string;
   level?: never;
 };
 

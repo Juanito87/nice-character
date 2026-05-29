@@ -9,22 +9,17 @@ Each character owns its data:
 
 ```text
 characters/
-  aria-thorn/
-    character.docx
-    manual/
-      summary.md
-      image-prompt.md
-      stl-prompt.md
-    assets/
+  Escama Roja/
+    EscamaRoja.docx
 assets/
 dist/
 ```
 
-Use `assets/` only for global shared files. Character-local files should stay inside `characters/<character_name>/`.
+Each character folder may contain `character.docx` or exactly one non-lock `.docx` file named for the character. Optional character-local `manual/` and `assets/` folders can be added when needed. Use top-level `assets/` only for global shared files.
 
 ## DOCX Template
 
-`character.docx` must use these top-level headings:
+Each character DOCX must use these top-level section labels:
 
 1. Character Overview
 2. Level Progression
@@ -40,6 +35,8 @@ These top-level headings are optional:
 3. Sources
 
 The overview must not include a current level. The book is a level 1-20 reference.
+Optional `Character Description`/`Description` and `Illustration`/`Image`/`Portrait` overview fields render as a description block beside a large character illustration.
+The reusable template at `docs/Template pj's.docx` mirrors the structure used by `characters/Escama Roja/EscamaRoja.docx`: expanded overview rows, a standalone `Character description` block, `LV 1 stats`, progression, feature reference, equipment subsections, story, and sources.
 
 A working sample lives at `characters/sample-character/character.docx`. The matching editable source used to generate it is `characters/sample-character/sample-character-source.html`.
 
@@ -53,6 +50,7 @@ Empty generated sections are omitted from the Homebrewery output. Use `Sources` 
 
 ```bash
 npm install
+npm run template:docx
 npm run homebrewery:image
 npm test
 npm run build
@@ -63,6 +61,7 @@ After build:
 
 ```bash
 node build/src/cli/index.js validate characters/sample-character
+node build/src/cli/index.js validate "characters/Escama Roja/EscamaRoja.docx"
 node build/src/cli/index.js convert characters/sample-character --out dist/sample-character
 node build/src/cli/index.js build-site --input characters --out dist
 ```

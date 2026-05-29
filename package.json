@@ -9,6 +9,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "sample:docx": "node scripts/create-sample-docx.mjs",
+    "template:docx": "node scripts/create-template-docx.mjs",
     "homebrewery:image": "node scripts/build-homebrewery-image.mjs",
     "homebrewery:render": "npm run build && node build/src/cli/index.js render-homebrewery",
     "site:build": "npm run build && node build/src/cli/index.js build-site --input characters --out dist",

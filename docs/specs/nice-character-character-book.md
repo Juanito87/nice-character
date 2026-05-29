@@ -10,6 +10,7 @@ Convert structured `.docx` player-character books into Homebrewery v3-style mark
 - The book represents level 1-20 progression, not a current-level snapshot.
 - Character Overview must not include a current level field.
 - Each character lives under `characters/<character_name>/`.
+- Character folders may use `character.docx` or exactly one non-lock `.docx` named for the character.
 - Character-local data is preferred over global data.
 - Shared assets live under top-level `assets/`.
 - The source `.docx` must provide all rules/progression/feature text.
@@ -43,10 +44,12 @@ Optional top-level headings:
 
 Empty generated sections are omitted. `Sources` renders last when present, preserves DOCX hyperlinks as markdown links, and supports paragraph or table source notes.
 
+The reusable blank template at `docs/Template pj's.docx` mirrors the real `characters/Escama Roja/EscamaRoja.docx` shape: expanded overview rows, standalone `Character description` paragraphs, an `LV 1 stats` table inside overview, paragraph-style feature reference labels, equipment subsections, story, and sources.
+
 ## Acceptance Criteria
 
 - Validate a structured character folder.
-- Convert `character.docx` to `<slug>.brew.md`.
+- Convert a discovered character DOCX to `<slug>.brew.md`.
 - Build a static site with an index, per-character Homebrewery-rendered pages, print CSS, and downloadable Homebrewery source.
 - Resolve manual summary, image prompt, and STL prompt files relative to the character folder.
 - Keep AI providers behind a small interface with deterministic mock coverage.

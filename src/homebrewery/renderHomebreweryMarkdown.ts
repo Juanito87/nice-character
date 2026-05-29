@@ -29,6 +29,8 @@ export function renderHomebreweryMarkdown(book: CharacterBook): string {
       ...book.overviewRows
     ]),
     '',
+    ...renderOverviewMedia(book),
+    '',
     ...(book.levelOneStatsRows && book.levelOneStatsRows.length > 0
       ? ['## LV 1 Stats', '', renderWideTable(book.levelOneStatsRows), '']
       : []),
@@ -55,6 +57,33 @@ export function renderHomebreweryMarkdown(book: CharacterBook): string {
   ];
 
   return lines.filter((line, index, all) => !(line === '' && all[index - 1] === '')).join('\n').trimEnd() + '\n';
+}
+
+function renderOverviewMedia(book: CharacterBook): string[] {
+  const { description, illustration, name } = book.overview;
+  if (!description && !illustration) {
+    return [];
+  }
+
+  return [
+    '<div class="character-overview-media" style="display:grid;grid-template-columns:minmax(0,0.85fr) minmax(260px,1.5fr);gap:18px;align-items:start;margin-top:12px;">',
+    ...(description
+      ? [
+          '<div class="character-overview-description">',
+          '<h3>Character Description</h3>',
+          `<p>${escapeHtml(description)}</p>`,
+          '</div>'
+        ]
+      : []),
+    ...(illustration
+      ? [
+          '<div class="character-overview-illustration">',
+          `<img src="${escapeAttribute(illustration)}" alt="${escapeAttribute(`${name} illustration`)}" style="width:100%;max-height:420px;object-fit:contain;">`,
+          '</div>'
+        ]
+      : []),
+    '</div>'
+  ];
 }
 
 function renderProgressionRow(entry: ProgressionLevel): string[] {
@@ -267,6 +296,19 @@ function renderTableRow(row: string[]): string {
 
 function escapeTableCell(value: string): string {
   return value.replace(/\|/g, '\\|').replace(/\s+/g, ' ').trim();
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function escapeAttribute(value: string): string {
+  return escapeHtml(value)
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 function estimateCost(value: string): number {
