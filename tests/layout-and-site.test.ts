@@ -31,6 +31,24 @@ test('discovers character folders with character-local manual files and global a
   ]);
 });
 
+test('discovers a character folder with a single folder-named DOCX', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'nice-character-'));
+  const characterDir = join(root, 'characters/Escama Roja');
+  await mkdir(characterDir, { recursive: true });
+  await writeFile(join(characterDir, 'EscamaRoja.docx'), 'placeholder');
+  await writeFile(join(characterDir, '.~lock.EscamaRoja.docx#'), 'lock');
+
+  const characters = await discoverCharacters(join(root, 'characters'), join(root, 'assets'));
+
+  expect(characters).toMatchObject([
+    {
+      name: 'Escama Roja',
+      slug: 'escama-roja',
+      docxPath: join(characterDir, 'EscamaRoja.docx')
+    }
+  ]);
+});
+
 test('builds a static site with rendered pages and downloadable Homebrewery source', async () => {
   const outDir = await mkdtemp(join(tmpdir(), 'nice-character-site-'));
   const assetsDir = join(outDir, 'homebrewery-assets-source');

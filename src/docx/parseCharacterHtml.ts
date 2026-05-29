@@ -2,14 +2,29 @@ import type { AssetInputs, CharacterBook, FeatureReference, ProgressionLevel } f
 
 const requiredSections = [
   'Character Overview',
-  'How To Use This Book',
   'Level Progression',
   'Full Feature Reference',
   'Spells & Resources',
   'Equipment & Inventory',
-  'Character Story',
-  'Asset Inputs'
+  'Character Story'
 ];
+
+const defaultHowToUse = 'Print the full book and mark each level when gained. Use the progression table to see what changes at each level, then use the feature reference when a rule or ability needs the full text at the table.';
+
+const sectionAliases = new Map([
+  ['character overview', 'Character Overview'],
+  ['how to use this book', 'How To Use This Book'],
+  ['level progression', 'Level Progression'],
+  ['full feature reference', 'Full Feature Reference'],
+  ['spells & resources', 'Spells & Resources'],
+  ['spell & resources', 'Spells & Resources'],
+  ['spells and resources', 'Spells & Resources'],
+  ['spell and resources', 'Spells & Resources'],
+  ['equipment & inventory', 'Equipment & Inventory'],
+  ['equipment and inventory', 'Equipment & Inventory'],
+  ['character story', 'Character Story'],
+  ['asset inputs', 'Asset Inputs']
+]);
 
 type Section = {
   title: string;
@@ -28,7 +43,7 @@ export function parseCharacterHtml(html: string): CharacterBook {
 
   const overview = parseOverview(sectionMap.get('Character Overview') ?? '');
   const progression = parseProgression(sectionMap.get('Level Progression') ?? '');
-  const features = parseFeatures(sectionMap.get('Full Feature Reference') ?? '');
+  const features = parseFeatures(sectionMap.get('Full Feature Reference') ?? '', progression);
   const proseSections = {
     spellsAndResources: textContent(sectionMap.get('Spells & Resources') ?? ''),
     equipmentAndInventory: textContent(sectionMap.get('Equipment & Inventory') ?? ''),
@@ -41,7 +56,7 @@ export function parseCharacterHtml(html: string): CharacterBook {
 
   return {
     overview,
-    howToUse: textContent(sectionMap.get('How To Use This Book') ?? ''),
+    howToUse: textContent(sectionMap.get('How To Use This Book') ?? '') || defaultHowToUse,
     progression,
     features,
     sections: proseSections,
@@ -51,19 +66,29 @@ export function parseCharacterHtml(html: string): CharacterBook {
 
 function splitH1Sections(html: string): Section[] {
   const sections: Section[] = [];
-  const headingPattern = /<h1[^>]*>(.*?)<\/h1>/gis;
+  const headingPattern = /<h1[^>]*>(.*?)<\/h1>|<p[^>]*>(.*?)<\/p>/gis;
   const matches = [...html.matchAll(headingPattern)];
+  const sectionMatches = matches
+    .map((match) => ({
+      match,
+      title: canonicalSectionTitle(cleanText(match[1] ?? match[2] ?? ''))
+    }))
+    .filter((match): match is { match: RegExpExecArray; title: string } => Boolean(match.title));
 
-  for (let index = 0; index < matches.length; index += 1) {
-    const match = matches[index];
-    const next = matches[index + 1];
-    const title = cleanText(match[1] ?? '');
+  for (let index = 0; index < sectionMatches.length; index += 1) {
+    const { match, title } = sectionMatches[index] ?? {};
+    const next = sectionMatches[index + 1]?.match;
+    if (!match || !title) continue;
     const start = (match.index ?? 0) + match[0].length;
     const end = next?.index ?? html.length;
     sections.push({ title, html: html.slice(start, end) });
   }
 
   return sections;
+}
+
+function canonicalSectionTitle(value: string): string | undefined {
+  return sectionAliases.get(value.toLowerCase().replace(/\s+/g, ' '));
 }
 
 function parseOverview(html: string): CharacterBook['overview'] {
@@ -80,7 +105,7 @@ function parseOverview(html: string): CharacterBook['overview'] {
     name,
     pronouns: fields.get('pronouns'),
     ancestrySpecies: fields.get('ancestry/species') ?? fields.get('ancestry') ?? fields.get('species'),
-    classSubclassPath: fields.get('class/subclass path') ?? fields.get('class'),
+    classSubclassPath: fields.get('class/subclass path') ?? fields.get('class/multiclass') ?? fields.get('class'),
     background: fields.get('background'),
     player: fields.get('player'),
     campaign: fields.get('campaign'),
@@ -105,12 +130,55 @@ function parseProgression(html: string): ProgressionLevel[] {
   }));
 }
 
-function parseFeatures(html: string): FeatureReference[] {
+function parseFeatures(html: string, progression: ProgressionLevel[]): FeatureReference[] {
   const featurePattern = /<h2[^>]*>(.*?)<\/h2>(.*?)(?=<h2[^>]*>|$)/gis;
-  return [...html.matchAll(featurePattern)].map((match) => ({
+  const headingFeatures = [...html.matchAll(featurePattern)].map((match) => ({
     name: cleanText(match[1] ?? ''),
     description: textContent(match[2] ?? '')
   })).filter((feature) => feature.name.length > 0);
+  if (headingFeatures.length > 0) {
+    return headingFeatures;
+  }
+
+  return parseParagraphFeatureReferences(html, referencedFeatureNames(progression));
+}
+
+function parseParagraphFeatureReferences(html: string, featureNames: string[]): FeatureReference[] {
+  const paragraphs = [...html.matchAll(/<p[^>]*>(.*?)<\/p>/gis)].map((match) => ({
+    text: cleanText(match[1] ?? ''),
+    start: match.index ?? 0,
+    end: (match.index ?? 0) + match[0].length
+  }));
+  const features: FeatureReference[] = [];
+
+  for (let index = 0; index < paragraphs.length; index += 1) {
+    const paragraph = paragraphs[index];
+    const name = featureNames.find((featureName) => sameText(featureName, paragraph?.text ?? ''));
+    if (!paragraph || !name) continue;
+
+    const nextFeature = paragraphs.slice(index + 1).find((candidate) => (
+      featureNames.some((featureName) => sameText(featureName, candidate.text))
+    ));
+    const descriptionHtml = html.slice(paragraph.end, nextFeature?.start ?? html.length);
+    features.push({
+      name,
+      description: textContent(descriptionHtml) || name
+    });
+  }
+
+  return addBuiltInFeatureReferences(features, featureNames);
+}
+
+function addBuiltInFeatureReferences(features: FeatureReference[], featureNames: string[]): FeatureReference[] {
+  const existing = new Set(features.map((feature) => feature.name.toLowerCase()));
+  const builtIns: FeatureReference[] = [];
+  if (featureNames.some((name) => sameText(name, 'ASI')) && !existing.has('asi')) {
+    builtIns.push({
+      name: 'ASI',
+      description: 'Ability Score Improvement. Increase ability scores or choose a feat, depending on the rules used by the campaign.'
+    });
+  }
+  return [...features, ...builtIns];
 }
 
 function parseAssetInputs(html: string): AssetInputs {
@@ -166,6 +234,22 @@ function validateFeatureReferences(progression: ProgressionLevel[], features: Fe
   if (missing.length > 0) {
     throw new Error(`Missing full feature descriptions for: ${missing.join(', ')}`);
   }
+}
+
+function referencedFeatureNames(progression: ProgressionLevel[]): string[] {
+  const referenced = new Set<string>();
+  for (const level of progression) {
+    for (const name of [...level.featuresGained, ...level.subclassFeatures]) {
+      if (name) {
+        referenced.add(name);
+      }
+    }
+  }
+  return [...referenced];
+}
+
+function sameText(left: string, right: string): boolean {
+  return cleanText(left).toLowerCase() === cleanText(right).toLowerCase();
 }
 
 function splitList(value: string): string[] {

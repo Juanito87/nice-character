@@ -17,8 +17,8 @@ export async function discoverCharacters(charactersDir: string, globalAssetsDir:
 
   for (const entry of entries.filter((item) => item.isDirectory()).sort((a, b) => a.name.localeCompare(b.name))) {
     const dir = join(charactersDir, entry.name);
-    const docxPath = join(dir, 'character.docx');
-    if (await exists(docxPath)) {
+    const docxPath = await findCharacterDocx(dir);
+    if (docxPath) {
       characters.push({
         name: entry.name,
         slug: slugify(entry.name),
@@ -32,6 +32,22 @@ export async function discoverCharacters(charactersDir: string, globalAssetsDir:
   }
 
   return characters;
+}
+
+async function findCharacterDocx(dir: string): Promise<string | undefined> {
+  const canonical = join(dir, 'character.docx');
+  if (await exists(canonical)) {
+    return canonical;
+  }
+
+  const docxFiles = (await readdir(dir, { withFileTypes: true }))
+    .filter((entry) => entry.isFile())
+    .map((entry) => entry.name)
+    .filter((name) => name.toLowerCase().endsWith('.docx'))
+    .filter((name) => !name.startsWith('.') && !name.startsWith('~') && !name.startsWith('.~lock'))
+    .sort((a, b) => a.localeCompare(b));
+
+  return docxFiles.length === 1 ? join(dir, docxFiles[0] ?? '') : undefined;
 }
 
 async function exists(path: string): Promise<boolean> {
