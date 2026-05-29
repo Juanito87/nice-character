@@ -372,6 +372,111 @@ test('uses a higher budget for titled feature reference pages', () => {
   expect((markdown.match(/{{footnote Feature Reference}}/g) ?? [])).toHaveLength(1);
 });
 
+test('omits empty generated content sections', () => {
+  const progressionRows = Array.from({ length: 20 }, (_, index) => (
+    `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`
+  )).join('');
+  const featureDescriptions = Array.from({ length: 20 }, (_, index) => (
+    `<h2>Feature ${index + 1}</h2><p>Description ${index + 1}</p>`
+  )).join('');
+
+  const book = parseCharacterHtml(`
+    <p>Character overview</p>
+    <table><tr><td>Name</td><td>Escama Roja</td></tr></table>
+    <p>Level Progression</p>
+    <table><tr><td>Level</td><td>Proficiency Bonus</td><td>Features Gained</td><td>Subclass Features</td><td>Resources</td><td>Decisions</td><td>Notes</td></tr>${progressionRows}</table>
+    <p>Full Feature Reference</p>
+    ${featureDescriptions}
+    <p>Spell &amp; Resources</p>
+    <p>Equipment &amp; Inventory</p>
+    <p>Character Story</p>
+  `);
+  const markdown = renderHomebreweryMarkdown(book);
+
+  expect(markdown).not.toContain('## Spells & Resources');
+  expect(markdown).not.toContain('{{footnote Spells & Resources}}');
+  expect(markdown).not.toContain('## Equipment & Inventory');
+  expect(markdown).not.toContain('{{footnote Equipment}}');
+  expect(markdown).not.toContain('## Character Story');
+  expect(markdown).not.toContain('{{footnote Character Story}}');
+});
+
+test('renders optional sources with preserved paragraph and table hyperlinks', () => {
+  const progressionRows = Array.from({ length: 20 }, (_, index) => (
+    `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`
+  )).join('');
+  const featureDescriptions = Array.from({ length: 20 }, (_, index) => (
+    `<h2>Feature ${index + 1}</h2><p>Description ${index + 1}</p>`
+  )).join('');
+
+  const book = parseCharacterHtml(`
+    <p>Character overview</p>
+    <table><tr><td>Name</td><td>Escama Roja</td></tr></table>
+    <p>Level Progression</p>
+    <table><tr><td>Level</td><td>Proficiency Bonus</td><td>Features Gained</td><td>Subclass Features</td><td>Resources</td><td>Decisions</td><td>Notes</td></tr>${progressionRows}</table>
+    <p>Full Feature Reference</p>
+    ${featureDescriptions}
+    <p>Spell &amp; Resources</p>
+    <p>No spells.</p>
+    <p>Equipment &amp; Inventory</p>
+    <p>Rope.</p>
+    <p>Character Story</p>
+    <p>A pirate.</p>
+    <p>Sources</p>
+    <p>Class rules from <a href="https://example.com/pugilist">Pugilist Class</a>.</p>
+    <table><tr><td>Source</td><td>Link</td><td>Notes</td></tr><tr><td>Item list</td><td><a href="https://example.com/items">Items</a></td><td>Inventory options</td></tr></table>
+  `);
+  const markdown = renderHomebreweryMarkdown(book);
+
+  expect(markdown).toContain('## Sources');
+  expect(markdown).toContain('Class rules from [Pugilist Class](https://example.com/pugilist).');
+  expect(markdown).toContain('| Item list | [Items](https://example.com/items) | Inventory options |');
+  expect(markdown).toContain('{{footnote Sources}}');
+  expect(markdown.indexOf('## Sources')).toBeGreaterThan(markdown.indexOf('## Character Story'));
+});
+
+test('omits missing or empty sources sections', () => {
+  const progressionRows = Array.from({ length: 20 }, (_, index) => (
+    `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`
+  )).join('');
+  const featureDescriptions = Array.from({ length: 20 }, (_, index) => (
+    `<h2>Feature ${index + 1}</h2><p>Description ${index + 1}</p>`
+  )).join('');
+
+  const withoutSources = parseCharacterHtml(`
+    <p>Character overview</p>
+    <table><tr><td>Name</td><td>Escama Roja</td></tr></table>
+    <p>Level Progression</p>
+    <table><tr><td>Level</td><td>Proficiency Bonus</td><td>Features Gained</td><td>Subclass Features</td><td>Resources</td><td>Decisions</td><td>Notes</td></tr>${progressionRows}</table>
+    <p>Full Feature Reference</p>
+    ${featureDescriptions}
+    <p>Spell &amp; Resources</p>
+    <p>No spells.</p>
+    <p>Equipment &amp; Inventory</p>
+    <p>Rope.</p>
+    <p>Character Story</p>
+    <p>A pirate.</p>
+  `);
+  const withEmptySources = parseCharacterHtml(`
+    <p>Character overview</p>
+    <table><tr><td>Name</td><td>Escama Roja</td></tr></table>
+    <p>Level Progression</p>
+    <table><tr><td>Level</td><td>Proficiency Bonus</td><td>Features Gained</td><td>Subclass Features</td><td>Resources</td><td>Decisions</td><td>Notes</td></tr>${progressionRows}</table>
+    <p>Full Feature Reference</p>
+    ${featureDescriptions}
+    <p>Spell &amp; Resources</p>
+    <p>No spells.</p>
+    <p>Equipment &amp; Inventory</p>
+    <p>Rope.</p>
+    <p>Character Story</p>
+    <p>A pirate.</p>
+    <p>Sources</p>
+  `);
+
+  expect(renderHomebreweryMarkdown(withoutSources)).not.toContain('## Sources');
+  expect(renderHomebreweryMarkdown(withEmptySources)).not.toContain('## Sources');
+});
+
 test('parses Mammoth paragraph-style section labels and common section aliases', () => {
   const progressionRows = Array.from({ length: 20 }, (_, index) => (
     `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`

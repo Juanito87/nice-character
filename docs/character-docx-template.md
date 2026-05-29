@@ -1,6 +1,6 @@
 # Character DOCX Template
 
-Create `characters/<character_name>/character.docx` with these heading names exactly. `How To Use This Book` and `Asset Inputs` are optional.
+Create `characters/<character_name>/character.docx` with these heading names exactly. `How To Use This Book`, `Asset Inputs`, and `Sources` are optional.
 
 ## Character Overview
 
@@ -47,6 +47,8 @@ Every feature named in Level Progression must appear here.
 
 Spellcasting rules, known/prepared spells, slots, resource trackers, and recharge rules.
 
+Leave this section empty if the character has no spells or resource notes. Empty generated sections are omitted from the Homebrewery output.
+
 ## Equipment & Inventory
 
 Use these subsection labels as standalone paragraphs. The converter renders them as subtitles:
@@ -72,6 +74,24 @@ Equipment tables can be real DOCX tables or tab-separated rows. They render as f
 Appearance, personality, ideals, bonds, flaws, backstory, allies, enemies, secrets, and campaign hooks.
 
 Standalone story paragraphs that do not end with a dot render as subtitles. For example, `The Quartermaster` becomes a subtitle, while `The Quartermaster.` remains normal prose.
+
+## Sources
+
+Optional. Put links, citations, attribution notes, and reference material here. DOCX hyperlinks in this section are preserved as markdown links in the generated Homebrewery source.
+
+Recommended paragraph style:
+
+```text
+Pugilist class - Pugilist Class hyperlink. Used for class feature text.
+```
+
+Recommended table style:
+
+| Source | Link | Notes |
+| --- | --- | --- |
+| Item list | Items hyperlink | Inventory options |
+
+The rendered markdown should preserve links as `[label](url)`.
 
 ## Asset Inputs
 

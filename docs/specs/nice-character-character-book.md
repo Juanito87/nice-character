@@ -33,12 +33,15 @@ Optional top-level headings:
 
 - How To Use This Book
 - Asset Inputs
+- Sources
 
 `Level Progression` must contain all levels from 1 through 20. Every feature named in progression must have a corresponding full description in `Full Feature Reference`.
 
 `Equipment & Inventory` supports standalone subtitles for `Starting gear`, `Wanted items`, `Utility items`, and `Flavors items`. `Item: <name>` marks item headings. Equipment tables render as framed non-wide tables.
 
 `Character Story` treats standalone paragraphs that do not end with a dot as subtitles.
+
+Empty generated sections are omitted. `Sources` renders last when present, preserves DOCX hyperlinks as markdown links, and supports paragraph or table source notes.
 
 ## Acceptance Criteria
 

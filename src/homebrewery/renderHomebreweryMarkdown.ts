@@ -16,6 +16,7 @@ type RenderBlockOptions = {
 };
 
 export function renderHomebreweryMarkdown(book: CharacterBook): string {
+  const hasSources = hasRenderableBlocks(book.sectionBlocks.sources);
   const lines: string[] = [
     `# ${book.overview.name}`,
     '',
@@ -48,7 +49,9 @@ export function renderHomebreweryMarkdown(book: CharacterBook): string {
     '',
     ...renderPagedBlocks('Equipment & Inventory', 'Equipment', book.sectionBlocks.equipmentAndInventory, { wideTables: false }),
     '',
-    ...renderPagedBlocks('Character Story', 'Character Story', book.sectionBlocks.characterStory)
+    ...renderPagedBlocks('Character Story', 'Character Story', book.sectionBlocks.characterStory, undefined, hasSources),
+    '',
+    ...renderPagedBlocks('Sources', 'Sources', book.sectionBlocks.sources, undefined, false)
   ];
 
   return lines.filter((line, index, all) => !(line === '' && all[index - 1] === '')).join('\n').trimEnd() + '\n';
@@ -88,10 +91,11 @@ function renderPagedBlocks(
   title: string,
   footnote: string,
   blocks: ContentBlock[],
-  options: RenderBlockOptions = { wideTables: true }
+  options: RenderBlockOptions = { wideTables: true },
+  includeBreakAfter = true
 ): string[] {
   if (blocks.length === 0) {
-    return [`## ${title}`, '', ...pageFooter(footnote, true)];
+    return [];
   }
 
   const budget = pageBudgetForBlocks(blocks);
@@ -109,7 +113,11 @@ function renderPagedBlocks(
   }
 
   pages.push(page);
-  return renderPages(pages, footnote);
+  return renderPages(pages, footnote, false, includeBreakAfter);
+}
+
+function hasRenderableBlocks(blocks: ContentBlock[]): boolean {
+  return blocks.length > 0;
 }
 
 function pageBudgetForBlocks(blocks: ContentBlock[]): number {
@@ -187,16 +195,12 @@ function addBlockToPages(options: {
   return options.page;
 }
 
-function renderPages(pages: Page[], footnote: string, useColumns = false): string[] {
+function renderPages(pages: Page[], footnote: string, useColumns = false, includeBreakAfter = true): string[] {
   return pages.flatMap((page, index) => [
     ...(index === 0 && page.firstPageTitle ? [page.firstPageTitle, ''] : []),
     ...joinRenderedBlocks(page.blocks, useColumns),
-    ...pageFooter(footnote, index < pages.length - 1 || shouldBreakAfterSection(footnote))
+    ...pageFooter(footnote, index < pages.length - 1 || includeBreakAfter)
   ]);
-}
-
-function shouldBreakAfterSection(footnote: string): boolean {
-  return footnote !== 'Character Story';
 }
 
 function joinRenderedBlocks(blocks: string[], useColumns: boolean): string[] {

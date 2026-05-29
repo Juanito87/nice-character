@@ -130,6 +130,12 @@ function documentXml() {
     p('The Lost Banner'),
     p('Aria searches for the banner lost by her old company. Her story section can include appearance, personality, ideals, bonds, flaws, allies, enemies, secrets, and campaign hooks.'),
     p('The Quartermaster.'),
+    h1('Sources'),
+    p('Rules reference - https://www.dndbeyond.com/sources/dnd/free-rules. Used for baseline rules language.'),
+    table([
+      ['Source', 'Link', 'Notes'],
+      ['Homebrewery', 'https://homebrewery.naturalcrit.com/', 'Layout and print styling']
+    ]),
     h1('Asset Inputs'),
     table([
       ['summary', 'manual/summary.md'],

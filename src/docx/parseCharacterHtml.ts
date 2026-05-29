@@ -23,6 +23,7 @@ const sectionAliases = new Map([
   ['equipment & inventory', 'Equipment & Inventory'],
   ['equipment and inventory', 'Equipment & Inventory'],
   ['character story', 'Character Story'],
+  ['sources', 'Sources'],
   ['asset inputs', 'Asset Inputs']
 ]);
 
@@ -56,12 +57,14 @@ export function parseCharacterHtml(html: string): CharacterBook {
   const sectionBlocks = {
     spellsAndResources: parseContentBlocks(sectionMap.get('Spells & Resources') ?? ''),
     equipmentAndInventory: parseContentBlocks(sectionMap.get('Equipment & Inventory') ?? '', 'equipment'),
-    characterStory: parseContentBlocks(sectionMap.get('Character Story') ?? '', 'story')
+    characterStory: parseContentBlocks(sectionMap.get('Character Story') ?? '', 'story'),
+    sources: parseContentBlocks(sectionMap.get('Sources') ?? '', 'sources')
   };
   const proseSections = {
     spellsAndResources: renderBlockText(sectionBlocks.spellsAndResources),
     equipmentAndInventory: renderBlockText(sectionBlocks.equipmentAndInventory),
-    characterStory: renderBlockText(sectionBlocks.characterStory)
+    characterStory: renderBlockText(sectionBlocks.characterStory),
+    sources: renderBlockText(sectionBlocks.sources)
   };
   const assetInputs = parseAssetInputs(sectionMap.get('Asset Inputs') ?? '');
 
@@ -234,26 +237,27 @@ function parseFirstTableRows(html: string): string[][] {
   return parseTableRows(table);
 }
 
-function parseTableRows(html: string): string[][] {
+function parseTableRows(html: string, preserveLinks = false): string[][] {
   const rowPattern = /<tr[^>]*>(.*?)<\/tr>/gis;
   return [...html.matchAll(rowPattern)].map((rowMatch) => {
     const cellPattern = /<t[dh][^>]*>(.*?)<\/t[dh]>/gis;
-    return [...(rowMatch[1] ?? '').matchAll(cellPattern)].map((cellMatch) => textContent(cellMatch[1] ?? ''));
+    return [...(rowMatch[1] ?? '').matchAll(cellPattern)].map((cellMatch) => textContent(cellMatch[1] ?? '', preserveLinks));
   });
 }
 
-function parseContentBlocks(html: string, mode: 'default' | 'equipment' | 'story' = 'default'): ContentBlock[] {
+function parseContentBlocks(html: string, mode: 'default' | 'equipment' | 'story' | 'sources' = 'default'): ContentBlock[] {
   const blocks: ContentBlock[] = [];
   const blockPattern = /<table[^>]*>.*?<\/table>|<p[^>]*>.*?<\/p>/gis;
+  const preserveLinks = mode === 'sources';
   for (const match of html.matchAll(blockPattern)) {
     const value = match[0] ?? '';
     if (value.toLowerCase().startsWith('<table')) {
-      const rows = parseTableRows(value);
-      if (rows.length > 0) {
+      const rows = parseTableRows(value, preserveLinks);
+      if (rows.some((row) => row.some((cell) => cell.trim().length > 0))) {
         blocks.push({ type: 'table', rows });
       }
     } else {
-      const text = textContentWithStructure(value);
+      const text = textContentWithStructure(value, preserveLinks);
       const itemTitle = parseItemTitle(text);
       if (itemTitle) {
         blocks.push({ type: 'itemTitle', title: itemTitle });
@@ -284,7 +288,7 @@ function parseItemTitle(text: string): string | undefined {
   return match ? cleanText(match[1] ?? '') : undefined;
 }
 
-function isSubtitle(text: string, mode: 'default' | 'equipment' | 'story'): boolean {
+function isSubtitle(text: string, mode: 'default' | 'equipment' | 'story' | 'sources'): boolean {
   if (!text) {
     return false;
   }
@@ -385,12 +389,12 @@ function normalizeKey(value: string): string {
   return cleanText(value).toLowerCase();
 }
 
-function textContent(html: string): string {
-  return cleanText(html.replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n'));
+function textContent(html: string, preserveLinks = false): string {
+  return cleanText(html.replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n'), preserveLinks);
 }
 
-function textContentWithStructure(html: string): string {
-  return decodeText(html.replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n'))
+function textContentWithStructure(html: string, preserveLinks = false): string {
+  return decodeText(html.replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n'), preserveLinks)
     .split('\n')
     .map((line) => line.replace(/ {2,}/g, ' ').trim())
     .filter(Boolean)
@@ -398,16 +402,32 @@ function textContentWithStructure(html: string): string {
     .trim();
 }
 
-function cleanText(value: string): string {
-  return decodeText(value)
+function cleanText(value: string, preserveLinks = false): string {
+  return decodeText(value, preserveLinks)
     .replace(/\s+/g, ' ')
     .trim();
 }
 
-function decodeText(value: string): string {
-  return value
+function decodeText(value: string, preserveLinks = false): string {
+  const withLinks = preserveLinks ? markdownLinks(value) : value;
+  return withLinks
     .replace(/<[^>]+>/g, '')
     .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"');
+}
+
+function markdownLinks(value: string): string {
+  return value.replace(/<a\b[^>]*href=(["'])(.*?)\1[^>]*>(.*?)<\/a>/gis, (_match, _quote, href, label) => (
+    `[${cleanText(label)}](${decodeAttribute(href)})`
+  ));
+}
+
+function decodeAttribute(value: string): string {
+  return value
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')

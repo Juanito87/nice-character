@@ -61,6 +61,7 @@ export type CharacterBook = {
     spellsAndResources: ContentBlock[];
     equipmentAndInventory: ContentBlock[];
     characterStory: ContentBlock[];
+    sources: ContentBlock[];
   };
   assetInputs: AssetInputs;
 };

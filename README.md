@@ -37,6 +37,7 @@ These top-level headings are optional:
 
 1. How To Use This Book
 2. Asset Inputs
+3. Sources
 
 The overview must not include a current level. The book is a level 1-20 reference.
 
@@ -45,6 +46,8 @@ A working sample lives at `characters/sample-character/character.docx`. The matc
 In `Equipment & Inventory`, use standalone subsection labels for `Starting gear`, `Wanted items`, `Utility items`, and `Flavors items`. Use `Item: <name>` for item headings. Equipment tables render as framed non-wide tables.
 
 In `Character Story`, a standalone paragraph without a final dot renders as a story subtitle. A paragraph ending with a dot remains normal prose.
+
+Empty generated sections are omitted from the Homebrewery output. Use `Sources` at the end for links, citations, and source notes; DOCX hyperlinks in this section are preserved as markdown links. Prefer one source per paragraph, or a table with `Source | Link | Notes`.
 
 ## Commands
 

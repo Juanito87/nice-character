@@ -12,7 +12,8 @@ test('mock asset provider returns deterministic summary and prompt text', async 
     sectionBlocks: {
       spellsAndResources: [],
       equipmentAndInventory: [],
-      characterStory: []
+      characterStory: [],
+      sources: []
     },
     assetInputs: {}
   };
