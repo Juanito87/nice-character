@@ -245,6 +245,64 @@ test('renders paginated section headings only on the first page', () => {
   expect((markdown.match(/{{footnote Character Story}}/g) ?? []).length).toBeGreaterThan(1);
 });
 
+test('uses a lower budget for text-only story pages than mixed content pages', () => {
+  const progressionRows = Array.from({ length: 20 }, (_, index) => (
+    `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`
+  )).join('');
+  const featureDescriptions = Array.from({ length: 20 }, (_, index) => (
+    `<h2>Feature ${index + 1}</h2><p>Description ${index + 1}</p>`
+  )).join('');
+  const textOnlyStory = Array.from({ length: 175 }, () => 'Story sentence.').join(' ');
+  const mixedEquipmentText = Array.from({ length: 120 }, () => 'Inventory sentence.').join(' ');
+
+  const book = parseCharacterHtml(`
+    <p>Character overview</p>
+    <table><tr><td>Name</td><td>Escama Roja</td></tr></table>
+    <p>Level Progression</p>
+    <table><tr><td>Level</td><td>Proficiency Bonus</td><td>Features Gained</td><td>Subclass Features</td><td>Resources</td><td>Decisions</td><td>Notes</td></tr>${progressionRows}</table>
+    <p>Full Feature Reference</p>
+    ${featureDescriptions}
+    <p>Spell &amp; Resources</p>
+    <p>No spells.</p>
+    <p>Equipment &amp; Inventory</p>
+    <p>Item: Pack</p>
+    <p>${mixedEquipmentText}</p>
+    <p>Character Story</p>
+    <p>${textOnlyStory}</p>
+  `);
+  const markdown = renderHomebreweryMarkdown(book);
+
+  expect((markdown.match(/{{footnote Equipment}}/g) ?? [])).toHaveLength(1);
+  expect((markdown.match(/{{footnote Character Story}}/g) ?? []).length).toBeGreaterThan(1);
+});
+
+test('uses a higher budget for titled feature reference pages', () => {
+  const progressionRows = Array.from({ length: 20 }, (_, index) => (
+    `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`
+  )).join('');
+  const mediumFeatureText = Array.from({ length: 70 }, () => 'Feature text.').join(' ');
+
+  const book = parseCharacterHtml(`
+    <p>Character overview</p>
+    <table><tr><td>Name</td><td>Escama Roja</td></tr></table>
+    <p>Level Progression</p>
+    <table><tr><td>Level</td><td>Proficiency Bonus</td><td>Features Gained</td><td>Subclass Features</td><td>Resources</td><td>Decisions</td><td>Notes</td></tr>${progressionRows}</table>
+    <p>Full Feature Reference</p>
+    ${Array.from({ length: 20 }, (_, index) => (
+      `<h2>Feature ${index + 1}</h2><p>${index < 2 ? mediumFeatureText : `Description ${index + 1}`}</p>`
+    )).join('')}
+    <p>Spell &amp; Resources</p>
+    <p>No spells.</p>
+    <p>Equipment &amp; Inventory</p>
+    <p>Rope.</p>
+    <p>Character Story</p>
+    <p>A pirate.</p>
+  `);
+  const markdown = renderHomebreweryMarkdown(book);
+
+  expect((markdown.match(/{{footnote Feature Reference}}/g) ?? [])).toHaveLength(1);
+});
+
 test('parses Mammoth paragraph-style section labels and common section aliases', () => {
   const progressionRows = Array.from({ length: 20 }, (_, index) => (
     `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`

@@ -1,7 +1,8 @@
 import type { CharacterBook, ContentBlock, FeatureReference, ProgressionLevel } from '../model/CharacterBook.js';
 
-const prosePageBudget = 2800;
-const featurePageBudget = 2400;
+const textOnlyPageBudget = 2400;
+const mixedProsePageBudget = 2800;
+const featurePageBudget = 2800;
 
 type Page = {
     firstPageTitle: string;
@@ -43,7 +44,7 @@ export function renderHomebreweryMarkdown(book: CharacterBook): string {
     '',
     ...renderPagedBlocks('Equipment & Inventory', 'Equipment', book.sectionBlocks.equipmentAndInventory),
     '',
-    ...renderPagedBlocks('Character Story', 'Character Story', book.sectionBlocks.characterStory, prosePageBudget)
+    ...renderPagedBlocks('Character Story', 'Character Story', book.sectionBlocks.characterStory)
   ];
 
   return lines.filter((line, index, all) => !(line === '' && all[index - 1] === '')).join('\n').trimEnd() + '\n';
@@ -79,11 +80,12 @@ function renderFeatureReference(features: FeatureReference[]): string[] {
   return renderPages(pages, 'Feature Reference', true);
 }
 
-function renderPagedBlocks(title: string, footnote: string, blocks: ContentBlock[], budget = prosePageBudget): string[] {
+function renderPagedBlocks(title: string, footnote: string, blocks: ContentBlock[]): string[] {
   if (blocks.length === 0) {
     return [`## ${title}`, '', ...pageFooter(footnote, true)];
   }
 
+  const budget = pageBudgetForBlocks(blocks);
   const pages: Page[] = [];
   let page = newPage(`## ${title}`, budget);
   for (const block of blocks) {
@@ -99,6 +101,12 @@ function renderPagedBlocks(title: string, footnote: string, blocks: ContentBlock
 
   pages.push(page);
   return renderPages(pages, footnote);
+}
+
+function pageBudgetForBlocks(blocks: ContentBlock[]): number {
+  return blocks.every((block) => block.type === 'paragraph')
+    ? textOnlyPageBudget
+    : mixedProsePageBudget;
 }
 
 function renderContentBlock(block: ContentBlock, budget: number): string[] {
