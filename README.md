@@ -27,17 +27,24 @@ Use `assets/` only for global shared files. Character-local files should stay in
 `character.docx` must use these top-level headings:
 
 1. Character Overview
-2. How To Use This Book
-3. Level Progression
-4. Full Feature Reference
-5. Spells & Resources
-6. Equipment & Inventory
-7. Character Story
-8. Asset Inputs
+2. Level Progression
+3. Full Feature Reference
+4. Spells & Resources
+5. Equipment & Inventory
+6. Character Story
+
+These top-level headings are optional:
+
+1. How To Use This Book
+2. Asset Inputs
 
 The overview must not include a current level. The book is a level 1-20 reference.
 
 A working sample lives at `characters/sample-character/character.docx`. The matching editable source used to generate it is `characters/sample-character/sample-character-source.html`.
+
+In `Equipment & Inventory`, use standalone subsection labels for `Starting gear`, `Wanted items`, `Utility items`, and `Flavors items`. Use `Item: <name>` for item headings. Equipment tables render as framed non-wide tables.
+
+In `Character Story`, a standalone paragraph without a final dot renders as a story subtitle. A paragraph ending with a dot remains normal prose.
 
 ## Commands
 

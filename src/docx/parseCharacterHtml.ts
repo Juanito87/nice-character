@@ -26,6 +26,13 @@ const sectionAliases = new Map([
   ['asset inputs', 'Asset Inputs']
 ]);
 
+const equipmentSubtitles = new Set([
+  'starting gear',
+  'wanted items',
+  'utility items',
+  'flavors items'
+]);
+
 type Section = {
   title: string;
   html: string;
@@ -48,8 +55,8 @@ export function parseCharacterHtml(html: string): CharacterBook {
   const features = parseFeatures(sectionMap.get('Full Feature Reference') ?? '', progression);
   const sectionBlocks = {
     spellsAndResources: parseContentBlocks(sectionMap.get('Spells & Resources') ?? ''),
-    equipmentAndInventory: parseContentBlocks(sectionMap.get('Equipment & Inventory') ?? ''),
-    characterStory: parseContentBlocks(sectionMap.get('Character Story') ?? '')
+    equipmentAndInventory: parseContentBlocks(sectionMap.get('Equipment & Inventory') ?? '', 'equipment'),
+    characterStory: parseContentBlocks(sectionMap.get('Character Story') ?? '', 'story')
   };
   const proseSections = {
     spellsAndResources: renderBlockText(sectionBlocks.spellsAndResources),
@@ -235,7 +242,7 @@ function parseTableRows(html: string): string[][] {
   });
 }
 
-function parseContentBlocks(html: string): ContentBlock[] {
+function parseContentBlocks(html: string, mode: 'default' | 'equipment' | 'story' = 'default'): ContentBlock[] {
   const blocks: ContentBlock[] = [];
   const blockPattern = /<table[^>]*>.*?<\/table>|<p[^>]*>.*?<\/p>/gis;
   for (const match of html.matchAll(blockPattern)) {
@@ -250,6 +257,8 @@ function parseContentBlocks(html: string): ContentBlock[] {
       const itemTitle = parseItemTitle(text);
       if (itemTitle) {
         blocks.push({ type: 'itemTitle', title: itemTitle });
+      } else if (isSubtitle(text, mode)) {
+        blocks.push({ type: 'subtitle', title: text });
       } else if (text) {
         blocks.push({ type: 'paragraph', text });
       }
@@ -264,6 +273,8 @@ function renderBlockText(blocks: ContentBlock[]): string {
       ? block.text
       : block.type === 'itemTitle'
         ? block.title
+        : block.type === 'subtitle'
+          ? block.title
       : block.rows.map((row) => row.join('\t')).join('\n')
   )).join('\n\n');
 }
@@ -271,6 +282,19 @@ function renderBlockText(blocks: ContentBlock[]): string {
 function parseItemTitle(text: string): string | undefined {
   const match = text.match(/^item:\s*(.+)$/i);
   return match ? cleanText(match[1] ?? '') : undefined;
+}
+
+function isSubtitle(text: string, mode: 'default' | 'equipment' | 'story'): boolean {
+  if (!text) {
+    return false;
+  }
+  if (mode === 'equipment') {
+    return equipmentSubtitles.has(cleanText(text).toLowerCase());
+  }
+  if (mode === 'story') {
+    return !text.endsWith('.');
+  }
+  return false;
 }
 
 function coalesceTabbedTables(blocks: ContentBlock[]): ContentBlock[] {

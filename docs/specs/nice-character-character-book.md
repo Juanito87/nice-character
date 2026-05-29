@@ -23,15 +23,22 @@ Convert structured `.docx` player-character books into Homebrewery v3-style mark
 Required top-level headings:
 
 - Character Overview
-- How To Use This Book
 - Level Progression
 - Full Feature Reference
 - Spells & Resources
 - Equipment & Inventory
 - Character Story
+
+Optional top-level headings:
+
+- How To Use This Book
 - Asset Inputs
 
 `Level Progression` must contain all levels from 1 through 20. Every feature named in progression must have a corresponding full description in `Full Feature Reference`.
+
+`Equipment & Inventory` supports standalone subtitles for `Starting gear`, `Wanted items`, `Utility items`, and `Flavors items`. `Item: <name>` marks item headings. Equipment tables render as framed non-wide tables.
+
+`Character Story` treats standalone paragraphs that do not end with a dot as subtitles.
 
 ## Acceptance Criteria
 

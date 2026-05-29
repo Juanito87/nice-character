@@ -113,9 +113,23 @@ function documentXml() {
     h1('Spells & Resources'),
     p('No spells. Track Second Wind, Action Surge, Indomitable, and superiority dice here. Replace this section with spellcasting details for spellcasters.'),
     h1('Equipment & Inventory'),
+    p('Starting gear'),
     p('Longsword, shield, chain mail, explorer pack, folded company banner, and campaign-specific keepsakes.'),
+    p('Wanted items'),
+    p('Item: Cloak of Protection'),
+    p('Wondrous item, uncommon. A practical defensive upgrade for dangerous travel.'),
+    p('Utility items'),
+    table([
+      ['Item', 'Use'],
+      ['Rope', 'Climbing and rescue work'],
+      ['Lantern', 'Travel and watch duty']
+    ]),
+    p('Flavors items'),
+    p('A folded company banner and a polished old medal.'),
     h1('Character Story'),
+    p('The Lost Banner'),
     p('Aria searches for the banner lost by her old company. Her story section can include appearance, personality, ideals, bonds, flaws, allies, enemies, secrets, and campaign hooks.'),
+    p('The Quartermaster.'),
     h1('Asset Inputs'),
     table([
       ['summary', 'manual/summary.md'],

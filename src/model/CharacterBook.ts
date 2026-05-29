@@ -41,6 +41,10 @@ export type ContentBlock =
       title: string;
     }
   | {
+      type: 'subtitle';
+      title: string;
+    }
+  | {
       type: 'table';
       rows: string[][];
     };

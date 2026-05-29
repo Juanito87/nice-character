@@ -1,6 +1,6 @@
 # Character DOCX Template
 
-Create `characters/<character_name>/character.docx` with these heading names exactly.
+Create `characters/<character_name>/character.docx` with these heading names exactly. `How To Use This Book` and `Asset Inputs` are optional.
 
 ## Character Overview
 
@@ -21,7 +21,7 @@ Do not add a `Level` row.
 
 ## How To Use This Book
 
-Short player-facing notes for printing and using the book at the table.
+Optional short player-facing notes for printing and using the book at the table. This section is parsed for compatibility but is not rendered in the generated Homebrewery book.
 
 ## Level Progression
 
@@ -49,15 +49,33 @@ Spellcasting rules, known/prepared spells, slots, resource trackers, and recharg
 
 ## Equipment & Inventory
 
-Starting equipment, planned upgrades, magic items, currency, and campaign items.
+Use these subsection labels as standalone paragraphs. The converter renders them as subtitles:
+
+```text
+Starting gear
+Wanted items
+Utility items
+Flavors items
+```
+
+Use `Item: <name>` as a standalone paragraph for item titles:
+
+```text
+Item: Bracers of Defense
+Wondrous item, rare.
+```
+
+Equipment tables can be real DOCX tables or tab-separated rows. They render as framed tables, but not wide tables, because wide tables can break item flow in this section.
 
 ## Character Story
 
 Appearance, personality, ideals, bonds, flaws, backstory, allies, enemies, secrets, and campaign hooks.
 
+Standalone story paragraphs that do not end with a dot render as subtitles. For example, `The Quartermaster` becomes a subtitle, while `The Quartermaster.` remains normal prose.
+
 ## Asset Inputs
 
-Use a two-column table:
+Optional. Use a two-column table:
 
 | Field | Value |
 | --- | --- |

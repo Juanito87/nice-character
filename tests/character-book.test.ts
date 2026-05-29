@@ -111,7 +111,7 @@ test('preserves equipment paragraphs and tables in generated markdown', () => {
 
   expect(markdown).toContain('## Equipment & Inventory');
   expect(markdown).toContain('Bracers of Defense\n\nWhile wearing these bracers');
-  expect(markdown).toContain('{{classTable,frame,wide\n| Belt | Strength | Rarity |');
+  expect(markdown).toContain('{{classTable,frame\n| Belt | Strength | Rarity |');
   expect(markdown).toContain('| Hill | 21 | Rare |');
 });
 
@@ -141,9 +141,46 @@ test('converts tab-separated equipment rows into generated tables', () => {
   `);
   const markdown = renderHomebreweryMarkdown(book);
 
-  expect(markdown).toContain('{{classTable,frame,wide\n| Belt | Strength | Rarity |');
+  expect(markdown).toContain('{{classTable,frame\n| Belt | Strength | Rarity |');
   expect(markdown).toContain('| Belt of Giant Strength (hill) | 21 | Rare |');
   expect(markdown).toContain('| Belt of Giant Strength (storm) | 29 | Legendary |');
+});
+
+test('renders equipment category labels as subtitles', () => {
+  const progressionRows = Array.from({ length: 20 }, (_, index) => (
+    `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`
+  )).join('');
+  const featureDescriptions = Array.from({ length: 20 }, (_, index) => (
+    `<h2>Feature ${index + 1}</h2><p>Description ${index + 1}</p>`
+  )).join('');
+
+  const book = parseCharacterHtml(`
+    <p>Character overview</p>
+    <table><tr><td>Name</td><td>Escama Roja</td></tr></table>
+    <p>Level Progression</p>
+    <table><tr><td>Level</td><td>Proficiency Bonus</td><td>Features Gained</td><td>Subclass Features</td><td>Resources</td><td>Decisions</td><td>Notes</td></tr>${progressionRows}</table>
+    <p>Full Feature Reference</p>
+    ${featureDescriptions}
+    <p>Spell &amp; Resources</p>
+    <p>No spells.</p>
+    <p>Equipment &amp; Inventory</p>
+    <p>Starting gear</p>
+    <p>Rope and rations.</p>
+    <p>Wanted items</p>
+    <p>Bag of holding.</p>
+    <p>Utility items</p>
+    <p>Thieves tools.</p>
+    <p>Flavors items</p>
+    <p>A red scarf.</p>
+    <p>Character Story</p>
+    <p>A pirate.</p>
+  `);
+  const markdown = renderHomebreweryMarkdown(book);
+
+  expect(markdown).toContain('### Starting gear');
+  expect(markdown).toContain('### Wanted items');
+  expect(markdown).toContain('### Utility items');
+  expect(markdown).toContain('### Flavors items');
 });
 
 test('renders explicit item title markers as item headings', () => {
@@ -174,6 +211,38 @@ test('renders explicit item title markers as item headings', () => {
   expect(markdown).toContain('### Bracers of Defense');
   expect(markdown).toContain('### Bracers of Defense\n\nWondrous Item, Rare.');
   expect(markdown).not.toContain('Item: Bracers of Defense');
+});
+
+test('renders standalone story paragraphs without a final dot as subtitles', () => {
+  const progressionRows = Array.from({ length: 20 }, (_, index) => (
+    `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`
+  )).join('');
+  const featureDescriptions = Array.from({ length: 20 }, (_, index) => (
+    `<h2>Feature ${index + 1}</h2><p>Description ${index + 1}</p>`
+  )).join('');
+
+  const book = parseCharacterHtml(`
+    <p>Character overview</p>
+    <table><tr><td>Name</td><td>Escama Roja</td></tr></table>
+    <p>Level Progression</p>
+    <table><tr><td>Level</td><td>Proficiency Bonus</td><td>Features Gained</td><td>Subclass Features</td><td>Resources</td><td>Decisions</td><td>Notes</td></tr>${progressionRows}</table>
+    <p>Full Feature Reference</p>
+    ${featureDescriptions}
+    <p>Spell &amp; Resources</p>
+    <p>No spells.</p>
+    <p>Equipment &amp; Inventory</p>
+    <p>Rope.</p>
+    <p>Character Story</p>
+    <p>The Quartermaster</p>
+    <p>The quartermaster keeps the keys.</p>
+    <p>The Quartermaster.</p>
+  `);
+  const markdown = renderHomebreweryMarkdown(book);
+
+  expect(markdown).toContain('### The Quartermaster');
+  expect(markdown).toContain('The quartermaster keeps the keys.');
+  expect(markdown).toContain('The Quartermaster.');
+  expect(markdown).not.toContain('### The Quartermaster.');
 });
 
 test('inserts page breaks across long generated document sections', () => {

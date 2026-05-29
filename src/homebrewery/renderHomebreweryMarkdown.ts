@@ -11,6 +11,10 @@ type Page = {
     cost: number;
 };
 
+type RenderBlockOptions = {
+  wideTables: boolean;
+};
+
 export function renderHomebreweryMarkdown(book: CharacterBook): string {
   const lines: string[] = [
     `# ${book.overview.name}`,
@@ -42,7 +46,7 @@ export function renderHomebreweryMarkdown(book: CharacterBook): string {
     '',
     ...renderPagedBlocks('Spells & Resources', 'Spells & Resources', book.sectionBlocks.spellsAndResources),
     '',
-    ...renderPagedBlocks('Equipment & Inventory', 'Equipment', book.sectionBlocks.equipmentAndInventory),
+    ...renderPagedBlocks('Equipment & Inventory', 'Equipment', book.sectionBlocks.equipmentAndInventory, { wideTables: false }),
     '',
     ...renderPagedBlocks('Character Story', 'Character Story', book.sectionBlocks.characterStory)
   ];
@@ -80,7 +84,12 @@ function renderFeatureReference(features: FeatureReference[]): string[] {
   return renderPages(pages, 'Feature Reference', true);
 }
 
-function renderPagedBlocks(title: string, footnote: string, blocks: ContentBlock[]): string[] {
+function renderPagedBlocks(
+  title: string,
+  footnote: string,
+  blocks: ContentBlock[],
+  options: RenderBlockOptions = { wideTables: true }
+): string[] {
   if (blocks.length === 0) {
     return [`## ${title}`, '', ...pageFooter(footnote, true)];
   }
@@ -89,7 +98,7 @@ function renderPagedBlocks(title: string, footnote: string, blocks: ContentBlock
   const pages: Page[] = [];
   let page = newPage(`## ${title}`, budget);
   for (const block of blocks) {
-    for (const rendered of renderContentBlock(block, budget)) {
+    for (const rendered of renderContentBlock(block, budget, options)) {
       page = addBlockToPages({
         page,
         pages,
@@ -109,11 +118,11 @@ function pageBudgetForBlocks(blocks: ContentBlock[]): number {
     : mixedProsePageBudget;
 }
 
-function renderContentBlock(block: ContentBlock, budget: number): string[] {
+function renderContentBlock(block: ContentBlock, budget: number, options: RenderBlockOptions): string[] {
   if (block.type === 'table') {
-    return [renderWideTable(block.rows)];
+    return [renderTable(block.rows, options.wideTables)];
   }
-  if (block.type === 'itemTitle') {
+  if (block.type === 'itemTitle' || block.type === 'subtitle') {
     return [`### ${block.title}`];
   }
 
@@ -198,13 +207,17 @@ function joinRenderedBlocks(blocks: string[], useColumns: boolean): string[] {
 }
 
 function renderWideTable(rows: string[][]): string {
+  return renderTable(rows, true);
+}
+
+function renderTable(rows: string[][], wide: boolean): string {
   const [header, ...body] = rows;
   if (!header) {
     return '';
   }
 
   return [
-    '{{classTable,frame,wide',
+    wide ? '{{classTable,frame,wide' : '{{classTable,frame',
     renderTableRow(header),
     renderTableRow(header.map(() => ':--')),
     ...body.map(renderTableRow),
