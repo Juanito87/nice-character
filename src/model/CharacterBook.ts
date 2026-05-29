@@ -37,6 +37,10 @@ export type ContentBlock =
       text: string;
     }
   | {
+      type: 'itemTitle';
+      title: string;
+    }
+  | {
       type: 'table';
       rows: string[][];
     };

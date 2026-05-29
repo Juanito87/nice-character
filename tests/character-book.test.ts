@@ -146,6 +146,36 @@ test('converts tab-separated equipment rows into generated tables', () => {
   expect(markdown).toContain('| Belt of Giant Strength (storm) | 29 | Legendary |');
 });
 
+test('renders explicit item title markers as item headings', () => {
+  const progressionRows = Array.from({ length: 20 }, (_, index) => (
+    `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`
+  )).join('');
+  const featureDescriptions = Array.from({ length: 20 }, (_, index) => (
+    `<h2>Feature ${index + 1}</h2><p>Description ${index + 1}</p>`
+  )).join('');
+
+  const book = parseCharacterHtml(`
+    <p>Character overview</p>
+    <table><tr><td>Name</td><td>Escama Roja</td></tr></table>
+    <p>Level Progression</p>
+    <table><tr><td>Level</td><td>Proficiency Bonus</td><td>Features Gained</td><td>Subclass Features</td><td>Resources</td><td>Decisions</td><td>Notes</td></tr>${progressionRows}</table>
+    <p>Full Feature Reference</p>
+    ${featureDescriptions}
+    <p>Spell &amp; Resources</p>
+    <p>No spells.</p>
+    <p>Equipment &amp; Inventory</p>
+    <p>Item: Bracers of Defense</p>
+    <p>Wondrous Item, Rare.</p>
+    <p>Character Story</p>
+    <p>A pirate.</p>
+  `);
+  const markdown = renderHomebreweryMarkdown(book);
+
+  expect(markdown).toContain('### Bracers of Defense');
+  expect(markdown).toContain('### Bracers of Defense\n\nWondrous Item, Rare.');
+  expect(markdown).not.toContain('Item: Bracers of Defense');
+});
+
 test('inserts page breaks across long generated document sections', () => {
   const progressionRows = Array.from({ length: 20 }, (_, index) => (
     `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`
@@ -173,7 +203,44 @@ test('inserts page breaks across long generated document sections', () => {
   `);
   const markdown = renderHomebreweryMarkdown(book);
 
-  expect((markdown.match(/{{footnote Feature Reference}}/g) ?? [])).toHaveLength(20);
+  const featurePages = markdown.match(/{{footnote Feature Reference}}/g) ?? [];
+  expect(featurePages.length).toBeGreaterThan(1);
+  expect(featurePages.length).toBeLessThan(20);
+  expect((markdown.match(/{{footnote Equipment}}/g) ?? []).length).toBeGreaterThan(1);
+  expect((markdown.match(/{{footnote Character Story}}/g) ?? []).length).toBeGreaterThan(1);
+});
+
+test('renders paginated section headings only on the first page', () => {
+  const progressionRows = Array.from({ length: 20 }, (_, index) => (
+    `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`
+  )).join('');
+  const longDescription = Array.from({ length: 100 }, () => 'Long feature text.').join(' ');
+  const featureDescriptions = Array.from({ length: 20 }, (_, index) => (
+    `<h2>Feature ${index + 1}</h2><p>${longDescription}</p>`
+  )).join('');
+  const longEquipment = Array.from({ length: 150 }, () => '<p>Equipment paragraph with readable details.</p>').join('');
+  const longStory = Array.from({ length: 150 }, () => 'Story paragraph with readable details.').join(' ');
+
+  const book = parseCharacterHtml(`
+    <p>Character overview</p>
+    <table><tr><td>Name</td><td>Escama Roja</td></tr></table>
+    <p>Level Progression</p>
+    <table><tr><td>Level</td><td>Proficiency Bonus</td><td>Features Gained</td><td>Subclass Features</td><td>Resources</td><td>Decisions</td><td>Notes</td></tr>${progressionRows}</table>
+    <p>Full Feature Reference</p>
+    ${featureDescriptions}
+    <p>Spell &amp; Resources</p>
+    <p>No spells.</p>
+    <p>Equipment &amp; Inventory</p>
+    ${longEquipment}
+    <p>Character Story</p>
+    <p>${longStory}</p>
+  `);
+  const markdown = renderHomebreweryMarkdown(book);
+
+  expect((markdown.match(/## Full Feature Reference/g) ?? [])).toHaveLength(1);
+  expect((markdown.match(/## Equipment & Inventory/g) ?? [])).toHaveLength(1);
+  expect((markdown.match(/## Character Story/g) ?? [])).toHaveLength(1);
+  expect((markdown.match(/{{footnote Feature Reference}}/g) ?? []).length).toBeGreaterThan(1);
   expect((markdown.match(/{{footnote Equipment}}/g) ?? []).length).toBeGreaterThan(1);
   expect((markdown.match(/{{footnote Character Story}}/g) ?? []).length).toBeGreaterThan(1);
 });

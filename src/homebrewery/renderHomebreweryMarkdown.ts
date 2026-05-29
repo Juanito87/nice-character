@@ -1,13 +1,13 @@
 import type { CharacterBook, ContentBlock, FeatureReference, ProgressionLevel } from '../model/CharacterBook.js';
 
-const prosePageBudget = 1800;
-const featurePageBudget = 1500;
+const prosePageBudget = 2800;
+const featurePageBudget = 2400;
 
 type Page = {
-  title: string;
-  blocks: string[];
-  budget: number;
-  cost: number;
+    firstPageTitle: string;
+    blocks: string[];
+    budget: number;
+    cost: number;
 };
 
 export function renderHomebreweryMarkdown(book: CharacterBook): string {
@@ -71,7 +71,6 @@ function renderFeatureReference(features: FeatureReference[]): string[] {
       page,
       pages,
       block: rendered,
-      nextPageTitle: '## Full Feature Reference',
       forceBreakWhenFull: true
     });
   }
@@ -93,7 +92,6 @@ function renderPagedBlocks(title: string, footnote: string, blocks: ContentBlock
         page,
         pages,
         block: rendered,
-        nextPageTitle: `## ${title}`,
         forceBreakWhenFull: true
       });
     }
@@ -106,6 +104,9 @@ function renderPagedBlocks(title: string, footnote: string, blocks: ContentBlock
 function renderContentBlock(block: ContentBlock, budget: number): string[] {
   if (block.type === 'table') {
     return [renderWideTable(block.rows)];
+  }
+  if (block.type === 'itemTitle') {
+    return [`### ${block.title}`];
   }
 
   const text = formatParagraph(block.text);
@@ -142,14 +143,13 @@ function splitLongParagraph(text: string, budget: number): string[] {
 }
 
 function newPage(title: string, budget: number): Page {
-  return { title, blocks: [], budget, cost: estimateCost(title) };
+  return { firstPageTitle: title, blocks: [], budget, cost: estimateCost(title) };
 }
 
 function addBlockToPages(options: {
   page: Page;
   pages: Page[];
   block: string;
-  nextPageTitle: string;
   forceBreakWhenFull: boolean;
 }): Page {
   const blockCost = estimateCost(options.block);
@@ -159,7 +159,7 @@ function addBlockToPages(options: {
 
   if (shouldBreak) {
     options.pages.push(options.page);
-    const next = newPage(options.nextPageTitle, options.page.budget);
+    const next = newPage('', options.page.budget);
     next.blocks.push(options.block);
     next.cost += blockCost;
     return next;
@@ -172,8 +172,7 @@ function addBlockToPages(options: {
 
 function renderPages(pages: Page[], footnote: string, useColumns = false): string[] {
   return pages.flatMap((page, index) => [
-    page.title,
-    '',
+    ...(index === 0 && page.firstPageTitle ? [page.firstPageTitle, ''] : []),
     ...joinRenderedBlocks(page.blocks, useColumns),
     ...pageFooter(footnote, index < pages.length - 1 || shouldBreakAfterSection(footnote))
   ]);

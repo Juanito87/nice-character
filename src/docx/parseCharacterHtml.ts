@@ -247,7 +247,10 @@ function parseContentBlocks(html: string): ContentBlock[] {
       }
     } else {
       const text = textContentWithStructure(value);
-      if (text) {
+      const itemTitle = parseItemTitle(text);
+      if (itemTitle) {
+        blocks.push({ type: 'itemTitle', title: itemTitle });
+      } else if (text) {
         blocks.push({ type: 'paragraph', text });
       }
     }
@@ -259,8 +262,15 @@ function renderBlockText(blocks: ContentBlock[]): string {
   return blocks.map((block) => (
     block.type === 'paragraph'
       ? block.text
+      : block.type === 'itemTitle'
+        ? block.title
       : block.rows.map((row) => row.join('\t')).join('\n')
   )).join('\n\n');
+}
+
+function parseItemTitle(text: string): string | undefined {
+  const match = text.match(/^item:\s*(.+)$/i);
+  return match ? cleanText(match[1] ?? '') : undefined;
 }
 
 function coalesceTabbedTables(blocks: ContentBlock[]): ContentBlock[] {
