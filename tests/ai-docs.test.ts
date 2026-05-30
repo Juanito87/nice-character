@@ -13,4 +13,9 @@ test('repo has AI-friendly agent instructions and workflow docs', async () => {
   expect(workflow).toContain('AI Assets');
   expect(workflow).toContain('OPENAI_API_KEY');
   expect(workflow).toContain('GEMINI_API_KEY');
+  expect(workflow).toContain('3D Assets');
+  expect(workflow).toContain('generated/3d/current/');
+  expect(workflow).toContain('generated/history.md');
+  expect(workflow).toContain('MESHY_API_KEY');
+  expect(workflow).toContain('TRIPO_API_KEY');
 });

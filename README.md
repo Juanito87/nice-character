@@ -91,6 +91,22 @@ Use an optional DOCX `AI Assets` section to opt individual characters into gener
 
 Providers are selected with `--provider mock`, `--provider openai`, or `--provider gemini`. OpenAI requires `OPENAI_API_KEY`; Gemini requires `GEMINI_API_KEY`. Running `prepare-ai characters` processes only DOCX files with `run_ai` set to `true` unless `--run-ai` is passed as a manual override.
 
+## 3D STL Assets
+
+Use an optional DOCX `3D Assets` section for manual STL downloads or provider generation:
+
+| Field | Value |
+| --- | --- |
+| stl | assets/aria-thorn.stl |
+| run_3d | false |
+| provider | mock |
+| input | text |
+| force | false |
+
+`stl` can be a local character-relative STL path or an external URL. `prepare-3d` can generate current 3D outputs with `mock`, `meshy`, or `tripo`; Meshy requires `MESHY_API_KEY`, and Tripo requires `TRIPO_API_KEY`. Generated outputs live under `generated/3d/current/` and `generated/3d/current.json`.
+
+After committing a generated 3D iteration, run `record-artifact-history <character-folder> --commit <sha> --summary "<summary>"` to append `generated/history.md`. The site exposes only a download link for the selected STL.
+
 For local preview:
 
 ```bash

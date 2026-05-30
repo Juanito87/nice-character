@@ -128,6 +128,15 @@ function documentXml() {
       ['provider', 'mock'],
       ['force', 'false']
     ]),
+    p('3D Assets'),
+    table([
+      ['Field', 'Value'],
+      ['stl', ''],
+      ['run_3d', 'false'],
+      ['provider', 'mock'],
+      ['input', 'text'],
+      ['force', 'false']
+    ]),
     p('Sources'),
     p('[Source name] [Link](https://example.com) - [What this source was used for.]'),
     table([

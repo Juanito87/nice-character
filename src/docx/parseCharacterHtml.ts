@@ -1,4 +1,4 @@
-import type { AiAssets, AiAssetProviderName, AssetInputs, CharacterBook, ContentBlock, FeatureReference, ProgressionLevel } from '../model/CharacterBook.js';
+import type { AiAssets, AiAssetProviderName, AssetInputs, CharacterBook, ContentBlock, FeatureReference, ModelAssetInput, ModelAssetProviderName, ModelAssets, ProgressionLevel } from '../model/CharacterBook.js';
 
 const requiredSections = [
   'Character Overview',
@@ -25,7 +25,10 @@ const sectionAliases = new Map([
   ['character story', 'Character Story'],
   ['sources', 'Sources'],
   ['asset inputs', 'Asset Inputs'],
-  ['ai assets', 'AI Assets']
+  ['ai assets', 'AI Assets'],
+  ['3d assets', '3D Assets'],
+  ['3d asset', '3D Assets'],
+  ['model assets', '3D Assets']
 ]);
 
 const equipmentSubtitles = new Set([
@@ -70,6 +73,7 @@ export function parseCharacterHtml(html: string): CharacterBook {
   };
   const assetInputs = parseAssetInputs(sectionMap.get('Asset Inputs') ?? '');
   const aiAssets = parseAiAssets(sectionMap.get('AI Assets') ?? '');
+  const modelAssets = parseModelAssets(sectionMap.get('3D Assets') ?? '');
 
   validateLevels(progression);
   validateFeatureReferences(progression, features);
@@ -84,7 +88,8 @@ export function parseCharacterHtml(html: string): CharacterBook {
     sections: proseSections,
     sectionBlocks,
     assetInputs,
-    aiAssets
+    aiAssets,
+    modelAssets
   };
 }
 
@@ -290,6 +295,35 @@ function parseBoolean(value?: string): boolean | undefined {
 function parseAiProvider(value?: string): AiAssetProviderName | undefined {
   const normalized = value?.toLowerCase();
   return normalized === 'mock' || normalized === 'openai' || normalized === 'gemini'
+    ? normalized
+    : undefined;
+}
+
+function parseModelAssets(html: string): ModelAssets | undefined {
+  const fields = parseKeyValueTable(html);
+  if (fields.size === 0) {
+    return undefined;
+  }
+
+  return {
+    stl: fields.get('stl') || undefined,
+    run3d: parseBoolean(fields.get('run_3d') ?? fields.get('run 3d')),
+    provider: parseModelProvider(fields.get('provider')),
+    input: parseModelInput(fields.get('input')),
+    force: parseBoolean(fields.get('force'))
+  };
+}
+
+function parseModelProvider(value?: string): ModelAssetProviderName | undefined {
+  const normalized = value?.toLowerCase();
+  return normalized === 'mock' || normalized === 'meshy' || normalized === 'tripo'
+    ? normalized
+    : undefined;
+}
+
+function parseModelInput(value?: string): ModelAssetInput | undefined {
+  const normalized = value?.toLowerCase();
+  return normalized === 'text' || normalized === 'image'
     ? normalized
     : undefined;
 }

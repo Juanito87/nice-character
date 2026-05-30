@@ -34,10 +34,20 @@ export type AssetInputs = {
 };
 
 export type AiAssetProviderName = 'mock' | 'openai' | 'gemini';
+export type ModelAssetProviderName = 'mock' | 'meshy' | 'tripo';
+export type ModelAssetInput = 'text' | 'image';
 
 export type AiAssets = {
   runAi?: boolean;
   provider?: AiAssetProviderName;
+  force?: boolean;
+};
+
+export type ModelAssets = {
+  stl?: string;
+  run3d?: boolean;
+  provider?: ModelAssetProviderName;
+  input?: ModelAssetInput;
   force?: boolean;
 };
 
@@ -75,4 +85,5 @@ export type CharacterBook = {
   };
   assetInputs: AssetInputs;
   aiAssets?: AiAssets;
+  modelAssets?: ModelAssets;
 };

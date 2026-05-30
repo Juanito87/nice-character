@@ -77,7 +77,11 @@ test('builds a static site with rendered pages and downloadable Homebrewery sour
         slug: 'aria-thorn',
         title: 'Aria Thorn',
         markdown: '# Aria Thorn\n\n\\column\n\n{{classTable,frame\n| Level | Features |\n| 1 | Second Wind |\n}}\n\n{{footnote Character Overview}}\n{{pageNumber,auto}}\n\\page\n',
-        generatedAssetsDir
+        generatedAssetsDir,
+        stlDownload: {
+          href: 'generated/3d/current/model.stl',
+          label: 'Download STL'
+        }
       }
     ]
   });
@@ -94,6 +98,8 @@ test('builds a static site with rendered pages and downloadable Homebrewery sour
   expect(nojekyll).toBe('');
   expect(page).toContain('Print Character Book');
   expect(page).toContain('Download Homebrewery Source');
+  expect(page).toContain('href="./generated/3d/current/model.stl" download');
+  expect(page).toContain('Download STL');
   expect(page).toContain('class="brewRenderer rendererV3"');
   expect(page).toContain('class="pages"');
   expect(page).toContain("url('../assets/parchmentBackground.jpg')");

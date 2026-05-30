@@ -29,6 +29,30 @@ on:
         default: "false"
         type: choice
         options: ["false", "true"]
+      run_3d:
+        description: "Run optional paid 3D generation for opted-in DOCX files"
+        required: false
+        default: "false"
+        type: choice
+        options: ["false", "true"]
+      model_provider:
+        description: "3D provider for prepare-3d"
+        required: false
+        default: "mock"
+        type: choice
+        options: ["mock", "meshy", "tripo"]
+      model_input:
+        description: "3D generation input"
+        required: false
+        default: "text"
+        type: choice
+        options: ["text", "image"]
+      force_3d:
+        description: "Overwrite current generated 3D outputs"
+        required: false
+        default: "false"
+        type: choice
+        options: ["false", "true"]
 
 permissions:
   contents: read
@@ -66,6 +90,17 @@ jobs:
             FORCE_FLAG="--force"
           fi
           node build/src/cli/index.js prepare-ai characters --provider "${{ inputs.ai_provider }}" $FORCE_FLAG
+      - name: Prepare 3D assets
+        if: ${{ inputs.run_3d == 'true' }}
+        env:
+          MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+          TRIPO_API_KEY: ${{ secrets.TRIPO_API_KEY }}
+        run: |
+          FORCE_FLAG=""
+          if [ "${{ inputs.force_3d }}" = "true" ]; then
+            FORCE_FLAG="--force"
+          fi
+          node build/src/cli/index.js prepare-3d characters --provider "${{ inputs.model_provider }}" --input "${{ inputs.model_input }}" $FORCE_FLAG
       - run: node build/src/cli/index.js build-site --input characters --out dist
       - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
         if: ${{ inputs.publish_pages == 'true' || vars.PUBLISH_PAGES == 'true' }}

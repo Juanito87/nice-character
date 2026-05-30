@@ -193,6 +193,46 @@ test('parses optional AI Assets controls', () => {
   });
 });
 
+test('parses optional 3D Assets controls', () => {
+  const progressionRows = Array.from({ length: 20 }, (_, index) => (
+    `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`
+  )).join('');
+  const featureDescriptions = Array.from({ length: 20 }, (_, index) => (
+    `<h2>Feature ${index + 1}</h2><p>Description ${index + 1}</p>`
+  )).join('');
+
+  const book = parseCharacterHtml(`
+    <p>Character overview</p>
+    <table><tr><td>Name</td><td>Escama Roja</td></tr></table>
+    <p>Level Progression</p>
+    <table><tr><td>Level</td><td>Proficiency Bonus</td><td>Features Gained</td><td>Subclass Features</td><td>Resources</td><td>Decisions</td><td>Notes</td></tr>${progressionRows}</table>
+    <p>Full Feature Reference</p>
+    ${featureDescriptions}
+    <p>Spell &amp; Resources</p>
+    <p>No spells.</p>
+    <p>Equipment &amp; Inventory</p>
+    <p>Rope.</p>
+    <p>Character Story</p>
+    <p>A pirate.</p>
+    <p>3D Assets</p>
+    <table>
+      <tr><td>stl</td><td>assets/escama-roja.stl</td></tr>
+      <tr><td>run_3d</td><td>true</td></tr>
+      <tr><td>provider</td><td>meshy</td></tr>
+      <tr><td>input</td><td>image</td></tr>
+      <tr><td>force</td><td>true</td></tr>
+    </table>
+  `);
+
+  expect(book.modelAssets).toEqual({
+    stl: 'assets/escama-roja.stl',
+    run3d: true,
+    provider: 'meshy',
+    input: 'image',
+    force: true
+  });
+});
+
 test('preserves equipment paragraphs and tables in generated markdown', () => {
   const progressionRows = Array.from({ length: 20 }, (_, index) => (
     `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`

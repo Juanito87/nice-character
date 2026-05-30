@@ -166,6 +166,22 @@ generated/assets.json
 
 Run `nice-character prepare-ai <character-folder-or-docx>` to create deterministic sidecars with the mock provider. Use `--provider openai` with `OPENAI_API_KEY` or `--provider gemini` with `GEMINI_API_KEY` for real providers. Manual DOCX description and illustration fields take precedence over generated sidecars.
 
+## 3D Assets
+
+Optional. Use a two-column table to control STL and 3D provider output:
+
+| Field | Value |
+| --- | --- |
+| stl | assets/aria-thorn.stl |
+| run_3d | false |
+| provider | mock |
+| input | text |
+| force | false |
+
+`stl` can point to a local character-relative STL file or an external STL URL. `run_3d` opts this DOCX into 3D generation when the CLI or workflow 3D phase is enabled. `provider` can be `mock`, `meshy`, or `tripo`. `input` can be `text` or `image`.
+
+Generated 3D output keeps only the latest files under `generated/3d/current/`; Git history stores prior iterations. Run `record-artifact-history` after committing generated assets to append `generated/history.md`.
+
 ## Generated Homebrewery Layout
 
 The converter adds Homebrewery v3 layout controls to the generated `.brew.md`:

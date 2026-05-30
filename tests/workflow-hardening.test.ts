@@ -37,3 +37,16 @@ test('GitHub Actions makes Pages deployment and AI generation optional', async (
   expect(workflow).toContain('OPENAI_API_KEY');
   expect(workflow).toContain('GEMINI_API_KEY');
 });
+
+test('GitHub Actions makes paid 3D generation optional', async () => {
+  const workflow = await readFile('.github/workflows/pages.yml', 'utf8');
+
+  expect(workflow).toContain('run_3d');
+  expect(workflow).toContain("inputs.run_3d == 'true'");
+  expect(workflow).toContain('model_provider');
+  expect(workflow).toContain('model_input');
+  expect(workflow).toContain('force_3d');
+  expect(workflow).toContain('prepare-3d');
+  expect(workflow).toContain('MESHY_API_KEY');
+  expect(workflow).toContain('TRIPO_API_KEY');
+});
