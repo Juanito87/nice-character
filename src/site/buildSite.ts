@@ -1,10 +1,16 @@
-import { cp, mkdir, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { access, cp, mkdir, writeFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 
 export type SiteCharacter = {
   slug: string;
   title: string;
   markdown: string;
+  generatedAssetsDir?: string;
+  stlDownload?: {
+    href: string;
+    label: string;
+    copyFrom?: string;
+  };
 };
 
 export type BuildSiteOptions = {
@@ -30,9 +36,25 @@ export async function buildSite(options: BuildSiteOptions): Promise<void> {
     const characterOut = join(options.outDir, character.slug);
     const renderedHtml = await options.renderHomebreweryHtml(character);
     await mkdir(characterOut, { recursive: true });
+    if (character.generatedAssetsDir && await exists(join(character.generatedAssetsDir, 'generated'))) {
+      await cp(join(character.generatedAssetsDir, 'generated'), join(characterOut, 'generated'), { recursive: true, force: true });
+    }
+    if (character.stlDownload?.copyFrom) {
+      await mkdir(dirname(join(characterOut, character.stlDownload.href)), { recursive: true });
+      await cp(character.stlDownload.copyFrom, join(characterOut, character.stlDownload.href), { force: true });
+    }
     await writeFile(join(characterOut, 'index.html'), renderCharacterPage(character, rewriteHomebreweryAssetUrls(renderedHtml)));
     await writeFile(join(characterOut, `${character.slug}.brew.md`), character.markdown);
     await writeFile(join(characterOut, 'assets.json'), JSON.stringify({ slug: character.slug, assets: [] }, null, 2));
+  }
+}
+
+async function exists(path: string): Promise<boolean> {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -46,11 +68,15 @@ function renderIndex(characters: SiteCharacter[]): string {
 
 function renderCharacterPage(character: SiteCharacter, renderedHtml: string): string {
   const sourceName = `${character.slug}.brew.md`;
+  const stlDownload = character.stlDownload
+    ? `<a href="${escapeHtml(localHref(character.stlDownload.href))}" download>${escapeHtml(character.stlDownload.label)}</a>`
+    : '';
   return pageShell(character.title, `
     <main class="brew-page">
       <nav class="actions">
         <button onclick="window.print()">Print Character Book</button>
         <a href="./${sourceName}" download>Download Homebrewery Source</a>
+        ${stlDownload}
       </nav>
       <article class="rendered-brew">
         ${renderedHtml}
@@ -61,6 +87,13 @@ function renderCharacterPage(character: SiteCharacter, renderedHtml: string): st
       </details>
     </main>
   `);
+}
+
+function localHref(value: string): string {
+  if (/^https?:\/\//i.test(value)) {
+    return value;
+  }
+  return value.startsWith('./') ? value : `./${value}`;
 }
 
 function rewriteHomebreweryAssetUrls(html: string): string {

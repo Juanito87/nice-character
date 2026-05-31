@@ -34,7 +34,7 @@ export async function discoverCharacters(charactersDir: string, globalAssetsDir:
   return characters;
 }
 
-async function findCharacterDocx(dir: string): Promise<string | undefined> {
+export async function findCharacterDocx(dir: string): Promise<string | undefined> {
   const canonical = join(dir, 'character.docx');
   if (await exists(canonical)) {
     return canonical;

@@ -4,6 +4,55 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      publish_pages:
+        description: "Upload and deploy GitHub Pages"
+        required: false
+        default: "false"
+        type: choice
+        options: ["false", "true"]
+      run_ai:
+        description: "Run optional AI sidecar generation for opted-in DOCX files"
+        required: false
+        default: "false"
+        type: choice
+        options: ["false", "true"]
+      ai_provider:
+        description: "AI provider for prepare-ai"
+        required: false
+        default: "mock"
+        type: choice
+        options: ["mock", "openai", "gemini"]
+      force_ai:
+        description: "Overwrite existing generated AI sidecars"
+        required: false
+        default: "false"
+        type: choice
+        options: ["false", "true"]
+      run_3d:
+        description: "Run optional paid 3D generation for opted-in DOCX files"
+        required: false
+        default: "false"
+        type: choice
+        options: ["false", "true"]
+      model_provider:
+        description: "3D provider for prepare-3d"
+        required: false
+        default: "mock"
+        type: choice
+        options: ["mock", "meshy", "tripo"]
+      model_input:
+        description: "3D generation input"
+        required: false
+        default: "text"
+        type: choice
+        options: ["text", "image"]
+      force_3d:
+        description: "Overwrite current generated 3D outputs"
+        required: false
+        default: "false"
+        type: choice
+        options: ["false", "true"]
 
 permissions:
   contents: read
@@ -30,13 +79,38 @@ jobs:
       - run: npm run homebrewery:image
       - run: npm run check
       - run: npm run build
+      - name: Prepare AI sidecars
+        if: ${{ inputs.run_ai == 'true' }}
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          FORCE_FLAG=""
+          if [ "${{ inputs.force_ai }}" = "true" ]; then
+            FORCE_FLAG="--force"
+          fi
+          node build/src/cli/index.js prepare-ai characters --provider "${{ inputs.ai_provider }}" $FORCE_FLAG
+      - name: Prepare 3D assets
+        if: ${{ inputs.run_3d == 'true' }}
+        env:
+          MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+          TRIPO_API_KEY: ${{ secrets.TRIPO_API_KEY }}
+        run: |
+          FORCE_FLAG=""
+          if [ "${{ inputs.force_3d }}" = "true" ]; then
+            FORCE_FLAG="--force"
+          fi
+          node build/src/cli/index.js prepare-3d characters --provider "${{ inputs.model_provider }}" --input "${{ inputs.model_input }}" $FORCE_FLAG
       - run: node build/src/cli/index.js build-site --input characters --out dist
       - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
+        if: ${{ inputs.publish_pages == 'true' || vars.PUBLISH_PAGES == 'true' }}
       - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+        if: ${{ inputs.publish_pages == 'true' || vars.PUBLISH_PAGES == 'true' }}
         with:
           path: dist
 
   deploy:
+    if: ${{ inputs.publish_pages == 'true' || vars.PUBLISH_PAGES == 'true' }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

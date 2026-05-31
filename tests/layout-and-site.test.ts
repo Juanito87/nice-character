@@ -57,6 +57,9 @@ test('builds a static site with rendered pages and downloadable Homebrewery sour
   await mkdir(join(fontsDir, '5e'), { recursive: true });
   await writeFile(join(assetsDir, 'parchmentBackground.jpg'), 'image');
   await writeFile(join(fontsDir, '5e/BookInsanity.woff2'), 'font');
+  const generatedAssetsDir = join(outDir, 'character-generated-source');
+  await mkdir(join(generatedAssetsDir, 'generated'), { recursive: true });
+  await writeFile(join(generatedAssetsDir, 'generated/illustration.png'), 'generated image');
 
   await buildSite({
     outDir,
@@ -73,7 +76,12 @@ test('builds a static site with rendered pages and downloadable Homebrewery sour
       {
         slug: 'aria-thorn',
         title: 'Aria Thorn',
-        markdown: '# Aria Thorn\n\n\\column\n\n{{classTable,frame\n| Level | Features |\n| 1 | Second Wind |\n}}\n\n{{footnote Character Overview}}\n{{pageNumber,auto}}\n\\page\n'
+        markdown: '# Aria Thorn\n\n\\column\n\n{{classTable,frame\n| Level | Features |\n| 1 | Second Wind |\n}}\n\n{{footnote Character Overview}}\n{{pageNumber,auto}}\n\\page\n',
+        generatedAssetsDir,
+        stlDownload: {
+          href: 'generated/3d/current/model.stl',
+          label: 'Download STL'
+        }
       }
     ]
   });
@@ -84,11 +92,14 @@ test('builds a static site with rendered pages and downloadable Homebrewery sour
   const source = await readFile(join(outDir, 'aria-thorn/aria-thorn.brew.md'), 'utf8');
   const copiedAsset = await readFile(join(outDir, 'assets/parchmentBackground.jpg'), 'utf8');
   const copiedFont = await readFile(join(outDir, 'fonts/5e/BookInsanity.woff2'), 'utf8');
+  const copiedGeneratedImage = await readFile(join(outDir, 'aria-thorn/generated/illustration.png'), 'utf8');
 
   expect(index).toContain('Aria Thorn');
   expect(nojekyll).toBe('');
   expect(page).toContain('Print Character Book');
   expect(page).toContain('Download Homebrewery Source');
+  expect(page).toContain('href="./generated/3d/current/model.stl" download');
+  expect(page).toContain('Download STL');
   expect(page).toContain('class="brewRenderer rendererV3"');
   expect(page).toContain('class="pages"');
   expect(page).toContain("url('../assets/parchmentBackground.jpg')");
@@ -98,6 +109,7 @@ test('builds a static site with rendered pages and downloadable Homebrewery sour
   expect(source).toContain('{{classTable,frame');
   expect(copiedAsset).toBe('image');
   expect(copiedFont).toBe('font');
+  expect(copiedGeneratedImage).toBe('generated image');
 });
 
 test('resolves manual asset inputs relative to the character folder', async () => {
