@@ -65,8 +65,17 @@ function renderOverviewMedia(book: CharacterBook): string[] {
     return [];
   }
 
+  if (description && !illustration) {
+    return [
+      '<div class="wide character-overview-description-only" style="margin-top:12px;">',
+      '<h3>Character Description</h3>',
+      `<p>${escapeHtml(description)}</p>`,
+      '</div>'
+    ];
+  }
+
   return [
-    '<div class="character-overview-media" style="display:grid;grid-template-columns:minmax(0,0.85fr) minmax(260px,1.5fr);gap:18px;align-items:start;margin-top:12px;">',
+    '<div class="wide character-overview-media" style="display:grid;grid-template-columns:minmax(0,0.85fr) minmax(260px,1.5fr);gap:18px;align-items:start;margin-top:12px;">',
     ...(description
       ? [
           '<div class="character-overview-description">',

@@ -145,7 +145,7 @@ test('renders overview description beside a larger optional illustration', () =>
   `);
   const markdown = renderHomebreweryMarkdown(book);
 
-  expect(markdown).toContain('class="character-overview-media"');
+  expect(markdown).toContain('class="wide character-overview-media"');
   expect(markdown).toContain('grid-template-columns:minmax(0,0.85fr) minmax(260px,1.5fr)');
   expect(markdown).toContain('<div class="character-overview-description">');
   expect(markdown).toContain('<h3>Character Description</h3>');
@@ -155,6 +155,38 @@ test('renders overview description beside a larger optional illustration', () =>
   expect(markdown).toContain('<img src="assets/escama-roja.png" alt="Escama Roja illustration"');
   expect(markdown).not.toContain('| Character Description | A scarlet-scaled corsair with a jagged grin. |');
   expect(markdown).not.toContain('| Image | assets/escama-roja.png |');
+});
+
+test('renders overview description full width when no illustration is present', () => {
+  const progressionRows = Array.from({ length: 20 }, (_, index) => (
+    `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`
+  )).join('');
+  const featureDescriptions = Array.from({ length: 20 }, (_, index) => (
+    `<h2>Feature ${index + 1}</h2><p>Description ${index + 1}</p>`
+  )).join('');
+
+  const book = parseCharacterHtml(`
+    <p>Character overview</p>
+    <table>
+      <tr><td>Name</td><td>Escama Roja</td></tr>
+      <tr><td>Character Description</td><td>Escama Roja is a weathered human sailor with a powerful, athletic build forged by years of life at sea.</td></tr>
+    </table>
+    <p>Level Progression</p>
+    <table><tr><td>Level</td><td>Proficiency Bonus</td><td>Features Gained</td><td>Subclass Features</td><td>Resources</td><td>Decisions</td><td>Notes</td></tr>${progressionRows}</table>
+    <p>Full Feature Reference</p>
+    ${featureDescriptions}
+    <p>Spell &amp; Resources</p>
+    <p>No spells.</p>
+    <p>Equipment &amp; Inventory</p>
+    <p>Rope.</p>
+    <p>Character Story</p>
+    <p>A pirate.</p>
+  `);
+  const markdown = renderHomebreweryMarkdown(book);
+
+  expect(markdown).toContain('class="wide character-overview-description-only"');
+  expect(markdown).not.toContain('grid-template-columns');
+  expect(markdown).toContain('Escama Roja is a weathered human sailor');
 });
 
 test('parses optional AI Assets controls', () => {
