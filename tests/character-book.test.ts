@@ -44,7 +44,7 @@ test('renders Homebrewery v3 markdown for the full character book', async () => 
   expect(markdown).toContain('| 20 | +6 | Extra Attack (3) |');
   expect(markdown).toContain('## Full Feature Reference');
   expect(markdown).toContain('### Action Surge');
-  expect(markdown).toContain('{{footnote Character Overview}}');
+  expect(markdown).toMatch(/\{\{footnote (Character Overview|Level Progression)\}\}/);
   expect(markdown).toContain('{{pageNumber,auto}}');
   expect(markdown).toContain('\\column');
   expect(markdown).toContain('\\page');
@@ -119,7 +119,37 @@ test('parses overview description and illustration without showing illustration 
   expect(book.overviewRows).not.toContainEqual(['Illustration', 'assets/escama-roja.png']);
 });
 
-test('renders overview description beside a larger optional illustration', () => {
+test('accepts common misspelling of illustration as overview metadata', () => {
+  const progressionRows = Array.from({ length: 20 }, (_, index) => (
+    `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`
+  )).join('');
+  const featureDescriptions = Array.from({ length: 20 }, (_, index) => (
+    `<h2>Feature ${index + 1}</h2><p>Description ${index + 1}</p>`
+  )).join('');
+
+  const book = parseCharacterHtml(`
+    <p>Character overview</p>
+    <table>
+      <tr><td>Name</td><td>Escama Roja</td></tr>
+      <tr><td>Ilustration</td><td>assets/EscamaRoja.png</td></tr>
+    </table>
+    <p>Level Progression</p>
+    <table><tr><td>Level</td><td>Proficiency Bonus</td><td>Features Gained</td><td>Subclass Features</td><td>Resources</td><td>Decisions</td><td>Notes</td></tr>${progressionRows}</table>
+    <p>Full Feature Reference</p>
+    ${featureDescriptions}
+    <p>Spell &amp; Resources</p>
+    <p>No spells.</p>
+    <p>Equipment &amp; Inventory</p>
+    <p>Rope.</p>
+    <p>Character Story</p>
+    <p>A pirate.</p>
+  `);
+
+  expect(book.overview.illustration).toBe('assets/EscamaRoja.png');
+  expect(book.overviewRows).not.toContainEqual(['Ilustration', 'assets/EscamaRoja.png']);
+});
+
+test('renders optional illustration as a title-page cover and description as prose', () => {
   const progressionRows = Array.from({ length: 20 }, (_, index) => (
     `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`
   )).join('');
@@ -147,16 +177,149 @@ test('renders overview description beside a larger optional illustration', () =>
   `);
   const markdown = renderHomebreweryMarkdown(book);
 
-  expect(markdown).toContain('class="wide character-overview-media"');
-  expect(markdown).toContain('grid-template-columns:minmax(0,0.85fr) minmax(260px,1.5fr)');
-  expect(markdown).toContain('<div class="character-overview-description">');
-  expect(markdown).toContain('<h3>Character Description</h3>');
-  expect(markdown).toContain('A scarlet-scaled corsair with a jagged grin.');
-  expect(markdown).toContain('<div class="character-overview-illustration">');
-  expect(markdown).toContain('style="width:100%;max-height:420px;object-fit:contain;"');
+  expect(markdown).toContain('class="wide character-cover-illustration"');
+  expect(markdown).toContain('max-height:650px');
   expect(markdown).toContain('<img src="assets/escama-roja.png" alt="Escama Roja illustration"');
+  expect(markdown.indexOf('<img src="assets/escama-roja.png"')).toBeLessThan(markdown.indexOf('{{footnote Character Title}}'));
+  expect(markdown.indexOf('{{footnote Character Title}}')).toBeLessThan(markdown.indexOf('## Character Overview'));
+  expect(markdown).toContain('## Character Description');
+  expect(markdown).toContain('A scarlet-scaled corsair with a jagged grin.');
+  expect(markdown).not.toContain('character-overview-media');
+  expect(markdown).not.toContain('<h3>Character Description</h3>');
   expect(markdown).not.toContain('| Character Description | A scarlet-scaled corsair with a jagged grin. |');
   expect(markdown).not.toContain('| Image | assets/escama-roja.png |');
+});
+
+test('keeps short overview and level one stats tables on the same page', () => {
+  const progressionRows = Array.from({ length: 20 }, (_, index) => (
+    `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`
+  )).join('');
+  const featureDescriptions = Array.from({ length: 20 }, (_, index) => (
+    `<h2>Feature ${index + 1}</h2><p>Description ${index + 1}</p>`
+  )).join('');
+
+  const book = parseCharacterHtml(`
+    <p>Character overview</p>
+    <table><tr><td>Name</td><td>Escama Roja</td></tr><tr><td>Class</td><td>Fighter</td></tr></table>
+    <p>LV 1 stats</p>
+    <table><tr><td>Attribute</td><td>Total score</td><td>Ability Modifier</td></tr><tr><td>DEX</td><td>16</td><td>+3</td></tr></table>
+    <p>Level Progression</p>
+    <table><tr><td>Level</td><td>Proficiency Bonus</td><td>Features Gained</td><td>Subclass Features</td><td>Resources</td><td>Decisions</td><td>Notes</td></tr>${progressionRows}</table>
+    <p>Full Feature Reference</p>
+    ${featureDescriptions}
+    <p>Spell &amp; Resources</p>
+    <p>No spells.</p>
+    <p>Equipment &amp; Inventory</p>
+    <p>Rope.</p>
+    <p>Character Story</p>
+    <p>A pirate.</p>
+  `);
+  const markdown = renderHomebreweryMarkdown(book);
+  const overviewToStats = markdown.slice(markdown.indexOf('## Character Overview'), markdown.indexOf('## LV 1 Stats'));
+
+  expect(overviewToStats).not.toContain('\\page');
+});
+
+test('keeps level one stats and level progression on the same page when budget allows', () => {
+  const progressionRows = Array.from({ length: 20 }, (_, index) => (
+    `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`
+  )).join('');
+  const featureDescriptions = Array.from({ length: 20 }, (_, index) => (
+    `<h2>Feature ${index + 1}</h2><p>Description ${index + 1}</p>`
+  )).join('');
+
+  const book = parseCharacterHtml(`
+    <p>Character overview</p>
+    <table><tr><td>Name</td><td>Escama Roja</td></tr></table>
+    <p>Character description</p>
+    <p>A brief sailor profile.</p>
+    <p>LV 1 stats</p>
+    <table><tr><td>Attribute</td><td>Total score</td><td>Ability Modifier</td></tr><tr><td>DEX</td><td>16</td><td>+3</td></tr></table>
+    <p>Level Progression</p>
+    <table><tr><td>Level</td><td>Proficiency Bonus</td><td>Features Gained</td><td>Subclass Features</td><td>Resources</td><td>Decisions</td><td>Notes</td></tr>${progressionRows}</table>
+    <p>Full Feature Reference</p>
+    ${featureDescriptions}
+    <p>Spell &amp; Resources</p>
+    <p>No spells.</p>
+    <p>Equipment &amp; Inventory</p>
+    <p>Rope.</p>
+    <p>Character Story</p>
+    <p>A pirate.</p>
+  `);
+  const markdown = renderHomebreweryMarkdown(book);
+  const statsToProgression = markdown.slice(markdown.indexOf('## LV 1 Stats'), markdown.indexOf('## Level Progression'));
+
+  expect(statsToProgression).not.toContain('\\page');
+});
+
+test('keeps short description on the same page as character overview using columns', () => {
+  const progressionRows = Array.from({ length: 20 }, (_, index) => (
+    `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`
+  )).join('');
+  const featureDescriptions = Array.from({ length: 20 }, (_, index) => (
+    `<h2>Feature ${index + 1}</h2><p>Description ${index + 1}</p>`
+  )).join('');
+
+  const book = parseCharacterHtml(`
+    <p>Character overview</p>
+    <table><tr><td>Name</td><td>Escama Roja</td></tr><tr><td>Class</td><td>Pugilist</td></tr></table>
+    <p>Character description</p>
+    <p>A scarlet-haired sailor with a weathered coat.</p>
+    <p>He watches the deck like a veteran brawler.</p>
+    <p>LV 1 stats</p>
+    <table><tr><td>Attribute</td><td>Total score</td><td>Ability Modifier</td></tr><tr><td>DEX</td><td>16</td><td>+3</td></tr></table>
+    <p>Level Progression</p>
+    <table><tr><td>Level</td><td>Proficiency Bonus</td><td>Features Gained</td><td>Subclass Features</td><td>Resources</td><td>Decisions</td><td>Notes</td></tr>${progressionRows}</table>
+    <p>Full Feature Reference</p>
+    ${featureDescriptions}
+    <p>Spell &amp; Resources</p>
+    <p>No spells.</p>
+    <p>Equipment &amp; Inventory</p>
+    <p>Rope.</p>
+    <p>Character Story</p>
+    <p>A pirate.</p>
+  `);
+  const markdown = renderHomebreweryMarkdown(book);
+  const overviewToDescription = markdown.slice(markdown.indexOf('## Character Overview'), markdown.indexOf('## Character Description'));
+  const descriptionToStats = markdown.slice(markdown.indexOf('## Character Description'), markdown.indexOf('## LV 1 Stats'));
+
+  expect(overviewToDescription).not.toContain('\\page');
+  expect(descriptionToStats).toContain('\\column');
+  expect(descriptionToStats).toContain('A scarlet-haired sailor');
+  expect(descriptionToStats).not.toContain('<p>');
+});
+
+test('splits large overview tables before level one stats when budget is exceeded', () => {
+  const overviewRows = Array.from({ length: 24 }, (_, index) => (
+    `<tr><td>Field ${index + 1}</td><td>${'Long value '.repeat(8)}${index + 1}</td></tr>`
+  )).join('');
+  const progressionRows = Array.from({ length: 20 }, (_, index) => (
+    `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`
+  )).join('');
+  const featureDescriptions = Array.from({ length: 20 }, (_, index) => (
+    `<h2>Feature ${index + 1}</h2><p>Description ${index + 1}</p>`
+  )).join('');
+
+  const book = parseCharacterHtml(`
+    <p>Character overview</p>
+    <table><tr><td>Name</td><td>Escama Roja</td></tr>${overviewRows}</table>
+    <p>LV 1 stats</p>
+    <table><tr><td>Attribute</td><td>Total score</td><td>Ability Modifier</td></tr><tr><td>DEX</td><td>16</td><td>+3</td></tr></table>
+    <p>Level Progression</p>
+    <table><tr><td>Level</td><td>Proficiency Bonus</td><td>Features Gained</td><td>Subclass Features</td><td>Resources</td><td>Decisions</td><td>Notes</td></tr>${progressionRows}</table>
+    <p>Full Feature Reference</p>
+    ${featureDescriptions}
+    <p>Spell &amp; Resources</p>
+    <p>No spells.</p>
+    <p>Equipment &amp; Inventory</p>
+    <p>Rope.</p>
+    <p>Character Story</p>
+    <p>A pirate.</p>
+  `);
+  const markdown = renderHomebreweryMarkdown(book);
+  const overviewToStats = markdown.slice(markdown.indexOf('## Character Overview'), markdown.indexOf('## LV 1 Stats'));
+
+  expect(overviewToStats).toContain('\\page');
 });
 
 test('renders overview description as paged prose before level one stats when no illustration is present', () => {
@@ -195,8 +358,8 @@ His crimson hair is visible from across the deck.</td></tr>
   expect(markdown).toContain('Escama Roja is a weathered human sailor');
   expect(markdown).toContain('His crimson hair is visible from across the deck.');
   expect(markdown).not.toContain('<p>Escama Roja is a weathered human sailor');
-  expect(markdown.indexOf('{{footnote Character Overview}}')).toBeLessThan(markdown.indexOf('## Character Description'));
-  expect(markdown.indexOf('{{footnote Character Description}}')).toBeLessThan(markdown.indexOf('## LV 1 Stats'));
+  expect(markdown.indexOf('## Character Overview')).toBeLessThan(markdown.indexOf('## Character Description'));
+  expect(markdown.indexOf('## Character Description')).toBeLessThan(markdown.indexOf('## LV 1 Stats'));
 });
 
 test('parses optional AI Assets controls', () => {

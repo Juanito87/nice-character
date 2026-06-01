@@ -60,6 +60,9 @@ test('builds a static site with rendered pages and downloadable Homebrewery sour
   const generatedAssetsDir = join(outDir, 'character-generated-source');
   await mkdir(join(generatedAssetsDir, 'generated'), { recursive: true });
   await writeFile(join(generatedAssetsDir, 'generated/illustration.png'), 'generated image');
+  const localAssetsDir = join(outDir, 'character-assets-source');
+  await mkdir(localAssetsDir, { recursive: true });
+  await writeFile(join(localAssetsDir, 'portrait.png'), 'local image');
 
   await buildSite({
     outDir,
@@ -78,6 +81,7 @@ test('builds a static site with rendered pages and downloadable Homebrewery sour
         title: 'Aria Thorn',
         markdown: '# Aria Thorn\n\n\\column\n\n{{classTable,frame\n| Level | Features |\n| 1 | Second Wind |\n}}\n\n{{footnote Character Overview}}\n{{pageNumber,auto}}\n\\page\n',
         generatedAssetsDir,
+        localAssetsDir,
         stlDownload: {
           href: 'generated/3d/current/model.stl',
           label: 'Download STL'
@@ -93,6 +97,7 @@ test('builds a static site with rendered pages and downloadable Homebrewery sour
   const copiedAsset = await readFile(join(outDir, 'assets/parchmentBackground.jpg'), 'utf8');
   const copiedFont = await readFile(join(outDir, 'fonts/5e/BookInsanity.woff2'), 'utf8');
   const copiedGeneratedImage = await readFile(join(outDir, 'aria-thorn/generated/illustration.png'), 'utf8');
+  const copiedLocalImage = await readFile(join(outDir, 'aria-thorn/assets/portrait.png'), 'utf8');
 
   expect(index).toContain('Aria Thorn');
   expect(nojekyll).toBe('');
@@ -110,6 +115,7 @@ test('builds a static site with rendered pages and downloadable Homebrewery sour
   expect(copiedAsset).toBe('image');
   expect(copiedFont).toBe('font');
   expect(copiedGeneratedImage).toBe('generated image');
+  expect(copiedLocalImage).toBe('local image');
 });
 
 test('resolves manual asset inputs relative to the character folder', async () => {

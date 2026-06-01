@@ -3,6 +3,8 @@ import type { CharacterBook, ContentBlock, FeatureReference, ProgressionLevel } 
 const textOnlyPageBudget = 2400;
 const mixedProsePageBudget = 2800;
 const featurePageBudget = 3200;
+const tablePageBudget = 2400;
+const introPageBudget = 2200;
 
 type Page = {
     firstPageTitle: string;
@@ -15,25 +17,24 @@ type RenderBlockOptions = {
   wideTables: boolean;
 };
 
+type TableSection = {
+  title: string;
+  rows: string[][];
+  footnote: string;
+};
+
+type TablePage = {
+  sections: TableSection[];
+  cost: number;
+  footnote: string;
+};
+
 export function renderHomebreweryMarkdown(book: CharacterBook): string {
   const hasSources = hasRenderableBlocks(book.sectionBlocks.sources);
   const lines: string[] = [
-    `# ${book.overview.name}`,
-    '',
-    book.overview.tagline ?? '',
-    '',
-    ...pageFooter('Character Title', true),
+    ...renderTitlePage(book),
     '',
     ...renderOverviewPages(book),
-    '',
-    '## Level Progression',
-    '',
-    renderWideTable([
-      ['Level', 'Prof.', 'Features', 'Subclass', 'Resources', 'Decisions', 'Notes'],
-      ...book.progression.map(renderProgressionRow)
-    ]),
-    '',
-    ...pageFooter('Level Progression', true),
     '',
     ...renderFeatureReference(book.features),
     '',
@@ -49,67 +50,157 @@ export function renderHomebreweryMarkdown(book: CharacterBook): string {
   return lines.filter((line, index, all) => !(line === '' && all[index - 1] === '')).join('\n').trimEnd() + '\n';
 }
 
-function renderOverviewPages(book: CharacterBook): string[] {
-  const hasMediaPage = Boolean(book.overview.illustration);
+function renderTitlePage(book: CharacterBook): string[] {
   return [
-    '## Character Overview',
+    `# ${book.overview.name}`,
     '',
-    renderWideTable([
-      ['Field', 'Value'],
-      ...book.overviewRows
-    ]),
+    book.overview.tagline ?? '',
     '',
-    ...pageFooter('Character Overview', true),
+    ...renderCoverIllustration(book),
     '',
-    ...(hasMediaPage
-      ? [
-          ...renderOverviewMedia(book),
-          '',
-          ...pageFooter('Character Description', true),
-          ''
-        ]
-      : []),
-    ...(!hasMediaPage && book.overview.description
-      ? [
-          ...renderPagedBlocks('Character Description', 'Character Description', descriptionBlocks(book.overview.description)),
-          ''
-        ]
-      : []),
-    ...(book.levelOneStatsRows && book.levelOneStatsRows.length > 0
-      ? ['## LV 1 Stats', '', renderWideTable(book.levelOneStatsRows), '', ...pageFooter('LV 1 Stats', true)]
-      : [])
+    ...pageFooter('Character Title', true)
   ];
 }
 
-function renderOverviewMedia(book: CharacterBook): string[] {
-  const { description, illustration, name } = book.overview;
-  if (!description && !illustration) {
+function renderOverviewPages(book: CharacterBook): string[] {
+  const overviewSection: TableSection = {
+    title: 'Character Overview',
+    rows: [
+      ['Field', 'Value'],
+      ...book.overviewRows
+    ],
+    footnote: 'Character Overview'
+  };
+  const tableSectionsAfterDescription = [
+    ...levelOneStatsSection(book),
+    levelProgressionSection(book)
+  ];
+
+  if (book.overview.description) {
+    const descriptionBlocks = descriptionContentBlocks(book.overview.description);
+    if (canShareIntroPage(overviewSection, descriptionBlocks)) {
+      return [
+        ...renderOverviewAndDescriptionPage(overviewSection, descriptionBlocks),
+        '',
+        ...renderTableSectionPages(tableSectionsAfterDescription, true)
+      ];
+    }
+
+    return [
+      ...renderTableSectionPages([overviewSection], true),
+      '',
+      ...renderDescriptionPages(descriptionBlocks),
+      '',
+      ...renderTableSectionPages(tableSectionsAfterDescription, true)
+    ];
+  }
+
+  return renderTableSectionPages([
+    overviewSection,
+    ...tableSectionsAfterDescription
+  ], true);
+}
+
+function renderCoverIllustration(book: CharacterBook): string[] {
+  const { illustration, name } = book.overview;
+  if (!illustration) {
     return [];
   }
 
   return [
-    '<div class="wide character-overview-media" style="display:grid;grid-template-columns:minmax(0,0.85fr) minmax(260px,1.5fr);gap:18px;align-items:start;margin-top:12px;">',
-    ...(description
-      ? [
-          '<div class="character-overview-description">',
-          '<h3>Character Description</h3>',
-          ...splitParagraphs(description).map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`),
-          '</div>'
-        ]
-      : []),
-    ...(illustration
-      ? [
-          '<div class="character-overview-illustration">',
-          `<img src="${escapeAttribute(illustration)}" alt="${escapeAttribute(`${name} illustration`)}" style="width:100%;max-height:420px;object-fit:contain;">`,
-          '</div>'
-        ]
-      : []),
+    '<div class="wide character-cover-illustration" style="display:flex;align-items:center;justify-content:center;margin-top:24px;">',
+    `<img src="${escapeAttribute(illustration)}" alt="${escapeAttribute(`${name} illustration`)}" style="width:100%;max-height:650px;object-fit:contain;">`,
     '</div>'
   ];
 }
 
-function descriptionBlocks(description: string): ContentBlock[] {
+function levelOneStatsSection(book: CharacterBook): TableSection[] {
+  return book.levelOneStatsRows && book.levelOneStatsRows.length > 0
+    ? [{
+        title: 'LV 1 Stats',
+        rows: book.levelOneStatsRows,
+        footnote: 'LV 1 Stats'
+      }]
+    : [];
+}
+
+function levelProgressionSection(book: CharacterBook): TableSection {
+  return {
+    title: 'Level Progression',
+    rows: [
+      ['Level', 'Prof.', 'Features', 'Subclass', 'Resources', 'Decisions', 'Notes'],
+      ...book.progression.map(renderProgressionRow)
+    ],
+    footnote: 'Level Progression'
+  };
+}
+
+function renderTableSectionPages(sections: TableSection[], includeBreakAfter: boolean): string[] {
+  if (sections.length === 0) {
+    return [];
+  }
+
+  const pages: TablePage[] = [];
+  let page: TablePage = { sections: [], cost: 0, footnote: sections[0]?.footnote ?? '' };
+
+  for (const section of sections) {
+    const sectionCost = estimateTableSectionCost(section);
+    if (page.sections.length > 0 && page.cost + sectionCost > tablePageBudget) {
+      pages.push(page);
+      page = { sections: [], cost: 0, footnote: section.footnote };
+    }
+    page.sections.push(section);
+    page.cost += sectionCost;
+    page.footnote = section.footnote;
+  }
+
+  pages.push(page);
+  return pages.flatMap((page, index) => [
+    ...page.sections.flatMap((section) => [
+      `## ${section.title}`,
+      '',
+      renderWideTable(section.rows),
+      ''
+    ]),
+    ...pageFooter(page.footnote, index < pages.length - 1 || includeBreakAfter)
+  ]);
+}
+
+function estimateTableSectionCost(section: TableSection): number {
+  const cellTextCost = section.rows.reduce(
+    (sum, row) => sum + row.reduce((rowSum, cell) => rowSum + cell.length, 0),
+    0
+  );
+  const columnCount = Math.max(...section.rows.map((row) => row.length), 1);
+  return 150 + (section.rows.length * 48) + (columnCount * 18) + (cellTextCost * 0.35);
+}
+
+function descriptionContentBlocks(description: string): ContentBlock[] {
   return splitParagraphs(description).map((text) => ({ type: 'paragraph', text }));
+}
+
+function canShareIntroPage(overviewSection: TableSection, descriptionBlocks: ContentBlock[]): boolean {
+  return estimateTableSectionCost(overviewSection) + estimateBlocksCost(descriptionBlocks) <= introPageBudget;
+}
+
+function renderOverviewAndDescriptionPage(overviewSection: TableSection, descriptionBlocks: ContentBlock[]): string[] {
+  const renderedDescriptionBlocks = descriptionBlocks
+    .flatMap((block) => renderContentBlock(block, textOnlyPageBudget, { wideTables: true }));
+
+  return [
+    `## ${overviewSection.title}`,
+    '',
+    renderWideTable(overviewSection.rows),
+    '',
+    '## Character Description',
+    '',
+    ...joinRenderedBlocks(renderedDescriptionBlocks, true),
+    ...pageFooter('Character Description', true)
+  ];
+}
+
+function renderDescriptionPages(blocks: ContentBlock[]): string[] {
+  return renderPagedBlocks('Character Description', 'Character Description', blocks, { wideTables: true }, true, true);
 }
 
 function splitParagraphs(value: string): string[] {
@@ -152,7 +243,8 @@ function renderPagedBlocks(
   footnote: string,
   blocks: ContentBlock[],
   options: RenderBlockOptions = { wideTables: true },
-  includeBreakAfter = true
+  includeBreakAfter = true,
+  useColumns = false
 ): string[] {
   if (blocks.length === 0) {
     return [];
@@ -173,7 +265,7 @@ function renderPagedBlocks(
   }
 
   pages.push(page);
-  return renderPages(pages, footnote, false, includeBreakAfter);
+  return renderPages(pages, footnote, useColumns, includeBreakAfter);
 }
 
 function hasRenderableBlocks(blocks: ContentBlock[]): boolean {
@@ -184,6 +276,18 @@ function pageBudgetForBlocks(blocks: ContentBlock[]): number {
   return blocks.every((block) => block.type === 'paragraph')
     ? textOnlyPageBudget
     : mixedProsePageBudget;
+}
+
+function estimateBlocksCost(blocks: ContentBlock[]): number {
+  return blocks.reduce((sum, block) => {
+    if (block.type === 'table') {
+      return sum + estimateCost(renderTable(block.rows, true));
+    }
+    if (block.type === 'itemTitle' || block.type === 'subtitle') {
+      return sum + estimateCost(block.title);
+    }
+    return sum + estimateCost(formatParagraph(block.text));
+  }, 0);
 }
 
 function renderContentBlock(block: ContentBlock, budget: number, options: RenderBlockOptions): string[] {

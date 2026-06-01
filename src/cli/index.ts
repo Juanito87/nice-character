@@ -184,6 +184,7 @@ program
         slug: character.slug,
         title: book.overview.name,
         markdown: renderHomebreweryMarkdown(book),
+        localAssetsDir: character.localAssetsDir,
         generatedAssetsDir: character.dir,
         stlDownload
       });

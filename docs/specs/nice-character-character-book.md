@@ -12,7 +12,8 @@ Convert structured `.docx` player-character books into Homebrewery v3-style mark
 - Each character lives under `characters/<character_name>/`.
 - Character folders may use `character.docx` or exactly one non-lock `.docx` named for the character.
 - Character-local data is preferred over global data.
-- Shared assets live under top-level `assets/`.
+- Character-specific assets live under `characters/<character_name>/assets/` and are copied to `dist/<slug>/assets/`.
+- Shared renderer/site assets live under top-level `assets/`.
 - The source `.docx` must provide all rules/progression/feature text.
 - AI hooks are interfaces in v1; manual and path-based inputs are the default.
 - Print support is Docker-rendered Homebrewery HTML plus downloadable Homebrewery source, not automated PDF generation.

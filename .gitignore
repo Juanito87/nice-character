@@ -2,6 +2,7 @@ node_modules/
 build/
 coverage/
 dist/
+docs/superpowers
 .superpowers/
 .homebrewery-src/
 *.tsbuildinfo

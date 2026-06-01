@@ -5,6 +5,7 @@ export type SiteCharacter = {
   slug: string;
   title: string;
   markdown: string;
+  localAssetsDir?: string;
   generatedAssetsDir?: string;
   stlDownload?: {
     href: string;
@@ -36,6 +37,9 @@ export async function buildSite(options: BuildSiteOptions): Promise<void> {
     const characterOut = join(options.outDir, character.slug);
     const renderedHtml = await options.renderHomebreweryHtml(character);
     await mkdir(characterOut, { recursive: true });
+    if (character.localAssetsDir && await exists(character.localAssetsDir)) {
+      await cp(character.localAssetsDir, join(characterOut, 'assets'), { recursive: true, force: true });
+    }
     if (character.generatedAssetsDir && await exists(join(character.generatedAssetsDir, 'generated'))) {
       await cp(join(character.generatedAssetsDir, 'generated'), join(characterOut, 'generated'), { recursive: true, force: true });
     }

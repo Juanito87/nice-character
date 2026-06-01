@@ -140,7 +140,7 @@ function parseOverview(html: string): CharacterBook['overview'] {
     campaign: fields.get('campaign'),
     tagline: fields.get('tagline'),
     description: fields.get('description') ?? fields.get('character description') ?? parseOverviewDescription(html),
-    illustration: fields.get('illustration') ?? fields.get('image') ?? fields.get('portrait')
+    illustration: fields.get('illustration') ?? fields.get('ilustration') ?? fields.get('image') ?? fields.get('portrait')
   };
 }
 
@@ -184,6 +184,7 @@ function isOverviewDisplayMetadataKey(value: string): boolean {
     'description',
     'character description',
     'illustration',
+    'ilustration',
     'image',
     'portrait'
   ].includes(normalizeKey(value));
