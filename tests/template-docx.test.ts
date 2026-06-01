@@ -52,7 +52,7 @@ test('template docx follows the Escama Roja reusable structure', async () => {
     input: 'text',
     force: false
   });
-  expect(markdown).toContain('<h3>Character Description</h3>');
+  expect(markdown).toContain('## Character Description');
   expect(markdown).toContain('## LV 1 Stats');
   expect(markdown).toContain('### Flavor items');
 });

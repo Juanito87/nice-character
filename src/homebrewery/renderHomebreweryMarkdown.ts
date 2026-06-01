@@ -22,19 +22,9 @@ export function renderHomebreweryMarkdown(book: CharacterBook): string {
     '',
     book.overview.tagline ?? '',
     '',
-    '## Character Overview',
+    ...pageFooter('Character Title', true),
     '',
-    renderWideTable([
-      ['Field', 'Value'],
-      ...book.overviewRows
-    ]),
-    '',
-    ...renderOverviewMedia(book),
-    '',
-    ...(book.levelOneStatsRows && book.levelOneStatsRows.length > 0
-      ? ['## LV 1 Stats', '', renderWideTable(book.levelOneStatsRows), '']
-      : []),
-    ...pageFooter('Character Overview', true),
+    ...renderOverviewPages(book),
     '',
     '## Level Progression',
     '',
@@ -59,19 +49,42 @@ export function renderHomebreweryMarkdown(book: CharacterBook): string {
   return lines.filter((line, index, all) => !(line === '' && all[index - 1] === '')).join('\n').trimEnd() + '\n';
 }
 
+function renderOverviewPages(book: CharacterBook): string[] {
+  const hasMediaPage = Boolean(book.overview.illustration);
+  return [
+    '## Character Overview',
+    '',
+    renderWideTable([
+      ['Field', 'Value'],
+      ...book.overviewRows
+    ]),
+    '',
+    ...pageFooter('Character Overview', true),
+    '',
+    ...(hasMediaPage
+      ? [
+          ...renderOverviewMedia(book),
+          '',
+          ...pageFooter('Character Description', true),
+          ''
+        ]
+      : []),
+    ...(!hasMediaPage && book.overview.description
+      ? [
+          ...renderPagedBlocks('Character Description', 'Character Description', descriptionBlocks(book.overview.description)),
+          ''
+        ]
+      : []),
+    ...(book.levelOneStatsRows && book.levelOneStatsRows.length > 0
+      ? ['## LV 1 Stats', '', renderWideTable(book.levelOneStatsRows), '', ...pageFooter('LV 1 Stats', true)]
+      : [])
+  ];
+}
+
 function renderOverviewMedia(book: CharacterBook): string[] {
   const { description, illustration, name } = book.overview;
   if (!description && !illustration) {
     return [];
-  }
-
-  if (description && !illustration) {
-    return [
-      '<div class="wide character-overview-description-only" style="margin-top:12px;">',
-      '<h3>Character Description</h3>',
-      `<p>${escapeHtml(description)}</p>`,
-      '</div>'
-    ];
   }
 
   return [
@@ -80,7 +93,7 @@ function renderOverviewMedia(book: CharacterBook): string[] {
       ? [
           '<div class="character-overview-description">',
           '<h3>Character Description</h3>',
-          `<p>${escapeHtml(description)}</p>`,
+          ...splitParagraphs(description).map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`),
           '</div>'
         ]
       : []),
@@ -93,6 +106,14 @@ function renderOverviewMedia(book: CharacterBook): string[] {
       : []),
     '</div>'
   ];
+}
+
+function descriptionBlocks(description: string): ContentBlock[] {
+  return splitParagraphs(description).map((text) => ({ type: 'paragraph', text }));
+}
+
+function splitParagraphs(value: string): string[] {
+  return value.split(/\n{2,}/).map((paragraph) => paragraph.trim()).filter(Boolean);
 }
 
 function renderProgressionRow(entry: ProgressionLevel): string[] {

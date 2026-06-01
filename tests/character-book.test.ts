@@ -37,6 +37,8 @@ test('renders Homebrewery v3 markdown for the full character book', async () => 
   expect(markdown).not.toMatch(/Level:/);
   expect(markdown).not.toContain('## How To Use This Book');
   expect(markdown).toContain('## Character Overview');
+  expect(markdown).toContain('{{footnote Character Title}}');
+  expect(markdown.indexOf('{{footnote Character Title}}')).toBeLessThan(markdown.indexOf('## Character Overview'));
   expect(markdown).toContain('| Field | Value |');
   expect(markdown).toContain('{{classTable,frame,wide');
   expect(markdown).toContain('| 20 | +6 | Extra Attack (3) |');
@@ -157,7 +159,7 @@ test('renders overview description beside a larger optional illustration', () =>
   expect(markdown).not.toContain('| Image | assets/escama-roja.png |');
 });
 
-test('renders overview description full width when no illustration is present', () => {
+test('renders overview description as paged prose before level one stats when no illustration is present', () => {
   const progressionRows = Array.from({ length: 20 }, (_, index) => (
     `<tr><td>${index + 1}</td><td>+2</td><td>Feature ${index + 1}</td><td></td><td></td><td></td><td></td></tr>`
   )).join('');
@@ -169,8 +171,12 @@ test('renders overview description full width when no illustration is present', 
     <p>Character overview</p>
     <table>
       <tr><td>Name</td><td>Escama Roja</td></tr>
-      <tr><td>Character Description</td><td>Escama Roja is a weathered human sailor with a powerful, athletic build forged by years of life at sea.</td></tr>
+      <tr><td>Character Description</td><td>Escama Roja is a weathered human sailor with a powerful, athletic build forged by years of life at sea.
+
+His crimson hair is visible from across the deck.</td></tr>
     </table>
+    <p>LV 1 stats</p>
+    <table><tr><td>Attribute</td><td>Total score</td><td>Ability Modifier</td></tr><tr><td>DEX</td><td>16</td><td>+3</td></tr></table>
     <p>Level Progression</p>
     <table><tr><td>Level</td><td>Proficiency Bonus</td><td>Features Gained</td><td>Subclass Features</td><td>Resources</td><td>Decisions</td><td>Notes</td></tr>${progressionRows}</table>
     <p>Full Feature Reference</p>
@@ -184,9 +190,13 @@ test('renders overview description full width when no illustration is present', 
   `);
   const markdown = renderHomebreweryMarkdown(book);
 
-  expect(markdown).toContain('class="wide character-overview-description-only"');
+  expect(markdown).toContain('## Character Description');
   expect(markdown).not.toContain('grid-template-columns');
   expect(markdown).toContain('Escama Roja is a weathered human sailor');
+  expect(markdown).toContain('His crimson hair is visible from across the deck.');
+  expect(markdown).not.toContain('<p>Escama Roja is a weathered human sailor');
+  expect(markdown.indexOf('{{footnote Character Overview}}')).toBeLessThan(markdown.indexOf('## Character Description'));
+  expect(markdown.indexOf('{{footnote Character Description}}')).toBeLessThan(markdown.indexOf('## LV 1 Stats'));
 });
 
 test('parses optional AI Assets controls', () => {
